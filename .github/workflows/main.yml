@@ -1,8 +1,18 @@
-uses: AbleLincoln/push-to-sftp@v1.0
-with:
-    host: ${{ secrets.HOSTNAME }}
-    port: ${{ secrets.PORT }}
-    username: ${{ secrets.USERNAME }}
-    password: ${{ secrets.PASSWORD }}
-    sourceDir: ${{ env.SOURCE }}
-    targetDir: ${{ env.TARGET }}
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push to SFTP
+        uses: AbleLincoln/push-to-sftp@v1.0
+        with:
+          host: ${{ secrets.HOSTNAME }}
+          port: ${{ secrets.PORT }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          sourceDir: ${{ env.SOURCE }}
+          targetDir: ${{ env.TARGET }}
