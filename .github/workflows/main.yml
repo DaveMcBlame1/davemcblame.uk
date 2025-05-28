@@ -14,5 +14,5 @@ jobs:
           port: 2022
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          sourceDir: ./WWW
+          sourceDir: ./www
           targetDir: ./www
