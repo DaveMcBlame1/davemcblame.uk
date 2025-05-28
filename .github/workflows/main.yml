@@ -7,12 +7,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check or Create WWW Directory
+        run: mkdir -p ./WWW
+
       - name: Push to SFTP
         uses: AbleLincoln/push-to-sftp@v1.0
         with:
-          host: ${{ secrets.HOSTNAME }}
-          port: ${{ secrets.PORT }}
+          host: EU-NL-APD01S01-N01.synthcloud.nl
+          port: 2022
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          sourceDir: ${{ env.SOURCE }}
-          targetDir: ${{ env.TARGET }}
+          sourceDir: ./WWW/
+          targetDir: ./www
