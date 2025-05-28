@@ -7,6 +7,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check or Create WWW Directory
+        run: mkdir -p ./WWW
+
       - name: Push to SFTP
         uses: AbleLincoln/push-to-sftp@v1.0
         with:
