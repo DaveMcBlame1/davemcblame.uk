@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check or Create WWW Directory
-        run: mkdir -p ./WWW && echo "<html><body>Sample Content</body></html>" > ./WWW/index.html
-
+        run: mkdir -p ./WWW
+        
       - name: Push to SFTP
         uses: AbleLincoln/push-to-sftp@v1.0
         with:
@@ -17,5 +17,5 @@ jobs:
           port: 2022
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          sourceDir: './WWW/'
-          targetDir: './www'
+          sourceDir: ./WWW/
+          targetDir: ./www
