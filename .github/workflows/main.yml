@@ -7,12 +7,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Push to SFTP
-        uses: AbleLincoln/push-to-sftp@v1.0
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: SFTP upload
+        uses: Dylan700/sftp-upload-action@latest
         with:
-          host: EU-NL-APD01S01-N01.synthcloud.nl
-          port: 2022
+          server: EU-NL-APD01S01-N01.synthcloud.nl
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          sourceDir: WWW
-          targetDir: /home/container/www
+          port: 2022
+          uploads: |
+            ./WWW => ./www/
+
