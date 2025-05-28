@@ -14,5 +14,5 @@ jobs:
           port: ${{ secrets.PORT }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          sourceDir: ${{ env.SOURCE }}
-          targetDir: ${{ env.TARGET }}
+          sourceDir: WWW
+          targetDir: www
