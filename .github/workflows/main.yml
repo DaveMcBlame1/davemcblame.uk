@@ -18,4 +18,5 @@ jobs:
           port: 2022
           uploads: |
             ./WWW => ./www/
+          delete: true
 
