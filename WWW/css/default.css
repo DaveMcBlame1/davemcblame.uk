@@ -29,7 +29,6 @@ body {
   border-radius: 20px;
   box-shadow: -6px 6px 0 rgb(41 41 41 / 40%);
   text-align: center;
-  display: flex;
   flex-direction: column;
   justify-content: center;
 }
@@ -57,11 +56,32 @@ header {
     height: 80px;
     background: #292929;
     display: flex;
-    align-items: center;
+    align-items:center;
     justify-content: center;
     box-shadow: 0 10px rgba(0, 0, 0, 0.3);
     color: white;
+    text-align: center;
+    z-index: 1000;
   font-family: glacial indifference;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.header-content .version {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #ccc;
+  margin-top: 1.2rem;
 }
 
 .footer {
