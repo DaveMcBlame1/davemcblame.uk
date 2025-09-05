@@ -79,6 +79,12 @@ header {
   border-radius: 8px; /* optional */
 }
 
+.navbar {
+  height: 48px;
+  width: auto;
+  margin-left: 500%;
+}
+
 .header-content h1 {
   margin: 0;
   font-size: 3rem;
@@ -94,8 +100,7 @@ header {
 }
 
 .footer {
-    position: fixed;
-    width: 100%;
+    width: 119.5%;
     height: 80px;
     background: #292929;
     bottom: 0;
@@ -127,13 +132,8 @@ p {
 }
 
 a {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: #00BFFF;
-    color: white;
+    color: #ffffff;
     text-decoration: none;
-    border-radius: 5px;
 }
 
 .fade-in {
