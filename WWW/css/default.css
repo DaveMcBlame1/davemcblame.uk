@@ -175,3 +175,64 @@ a {
       opacity: 1;
     }
   }
+
+/* Privacy Policy Page Specific Styles */
+.PP {
+  background: #d1d1d1;
+  color: #333;
+  max-width: auto;
+}
+.PP h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+.PP p {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.ptext {
+  margin: 1rem;
+  color:#292929;
+  align-self: center;
+  font-size: 1rem;
+}
+.plogo {
+  height: 48px;
+  margin-left: 1rem;
+  border-radius: 8px; 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  background: #fff;
+  margin-top: 1rem;
+  align-self: start;
+}
+.pprivacy-link {
+  align-self: start;
+  color: #292929;
+  background-color: #fff;
+  font-size: 0.9rem;
+  padding: 0.4em 0.5em;
+  border-radius: 8px;
+  border: none;
+  margin-left: 5rem;
+  margin-top: -2.4rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none;
+  font-weight: 500;
+}
+.pprivacy-link:hover {
+  text-decoration: none;
+  color: black;
+}
+.pnavbar {
+  height: 48px;
+  width: 48px; 
+  margin-right: 2rem;
+  margin-top: -2.4rem;
+  align-self: end;
+}
+.google {
+  color: #4285F4; /* Google Blue */
+}
