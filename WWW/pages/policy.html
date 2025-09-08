@@ -32,7 +32,7 @@
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
     <script>
-    fetch("/globaldata.txt")
+    fetch("../globaldata.txt")
       .then(r => {
         console.log("Fetch status:", r.status); // check HTTP status
         return r.text();
