@@ -243,3 +243,20 @@ a {
   top: 1rem;
   left: 1rem;
 }
+
+/* Error Page Specific Styles */
+
+.error-page {
+  background: #d1d1d1;
+  max-width: auto;
+  text-align: center;
+}
+.error-page h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+.error-text {
+  font-size: 1rem;
+  color:#292929;
+  margin: 1rem;
+}
