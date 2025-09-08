@@ -1,8 +1,8 @@
 <?php
-$request = $_SERVER['REQUEST_URI'];
+$request = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$request = rtrim($request, '/');
 
 switch ($request) {
-    case '/':
     case '':
         require __DIR__ . '/index.html';
         break;
@@ -11,7 +11,7 @@ switch ($request) {
         break;
     default:
         http_response_code(404);
-        require __DIR__ . 'errors/404.html';
+        require __DIR__ . '/errors/404.html';
         break;
 }
 ?>
