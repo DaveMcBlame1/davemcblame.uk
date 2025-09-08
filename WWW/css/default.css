@@ -4,7 +4,7 @@ body {
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  padding:2rem;
+  padding:rem;
   margin: 0;
 }
 
@@ -14,14 +14,14 @@ body {
   gap: 2rem;
   justify-content: center;
   width: 100%;
-  max-width: 1400px; /* adjust as needed */
-  margin-top: 120px; /* to avoid header overlap */
-  margin-bottom: 120px; /* to avoid footer overlap */
+  max-width: 1400px; 
+  margin-top: 120px; 
+  margin-bottom: 120px; 
   font-family: HK Grotesk;
 }
 
 .block {
-  flex: 0 0 160px; /* fixed width */
+  flex: 0 0 160px; 
   min-height: 120px;
   background: #292929;
   color: #fff;
@@ -35,12 +35,12 @@ body {
 
 .block2 {
   flex: 0 0 100%;
-  max-width: 900px;
+  max-width: 90%;
   font-size: 1.2rem;
   line-height: 1.6;
   background: #292929;
   color: #fff;
-  padding: 1.5rem;
+  padding: -2rem;
   border-radius: 20px;
   box-shadow: -6px 6px 0 #555;
   text-align: center;
@@ -57,7 +57,7 @@ header {
   background: #292929;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between; 
   box-shadow: 0 10px rgba(0, 0, 0, 0.3);
   color: white;
   text-align: center;
@@ -74,15 +74,14 @@ header {
 
 .logo {
   height: 48px;
-  width: auto;
   margin-right: 1rem;
-  border-radius: 8px; /* optional */
+  border-radius: 8px; 
 }
 
 .navbar {
   height: 48px;
-  width: auto;
-  margin-left: 500%;
+  width: 48px; 
+  margin-right: 2rem;
 }
 
 .header-content h1 {
@@ -100,16 +99,17 @@ header {
 }
 
 .footer {
-    width: 119.5%;
-    height: 80px;
-    background: #292929;
-    bottom: 0;
-    left: 0;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 100%;     
+  left: 0;         
+  bottom: 0;
+  height: 80px;
+  background: #292929;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: HK Grotesk;
+  align-self: stretch;
 }
 
 h1 {
