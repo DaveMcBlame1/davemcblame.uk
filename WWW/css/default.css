@@ -238,7 +238,7 @@ a {
 }
 .home-link {
   padding: 1.5rem;
-  position: fixed;
+  position: absolute;
   border-radius: 8px;
   top: 1rem;
   left: 1rem;
