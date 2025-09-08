@@ -32,20 +32,25 @@
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
     <script>
-    const targetKey = "version"; // choose which one to show
-
-    fetch("../globaldata.txt")
-      .then(res => res.text())
-      .then(text => {
-        const lines = text.split("\n");
-        const vars = {};
-        lines.forEach(line => {
-          const [key, value] = line.split("=");
-          if (key && value) vars[key.trim()] = value.trim();
-        });
-        document.querySelector(".version").textContent = vars[targetKey] || "Not found";
+    fetch("/globaldata.txt")
+      .then(r => {
+        console.log("Fetch status:", r.status); // check HTTP status
+        return r.text();
       })
-      .catch(err => console.error("Error:", err));
-  </script>
+      .then(text => {
+        console.log("File contents:", text); // see what we got
+        const vars = {};
+        text.split("\n").forEach(line => {
+          const [k, v] = line.split("=");
+          if (k && v) vars[k.trim()] = v.trim();
+        });
+
+        console.log("Parsed vars:", vars);
+        document.querySelectorAll(".version").forEach(el => {
+          el.textContent = vars.version || "Not found";
+        });
+      })
+      .catch(err => console.error("Error fetching file:", err));
+    </script>
   </footer>
 </html>
