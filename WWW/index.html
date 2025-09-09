@@ -42,25 +42,18 @@
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
     <script>
-    fetch("globaldata.txt")
-      .then(r => {
-        console.log("Fetch status:", r.status); // check HTTP status
-        return r.text();
-      })
-      .then(text => {
-        console.log("File contents:", text); // see what we got
-        const vars = {};
-        text.split("\n").forEach(line => {
-          const [k, v] = line.split("=");
-          if (k && v) vars[k.trim()] = v.trim();
-        });
+    async function loadVersion() {
+      const vars = await fetch("/globaldata.json")
+        .then(r => r.json())
+        .catch(e => console.error("Error fetching file", e));
 
-        console.log("Parsed vars:", vars);
-        document.querySelectorAll(".version").forEach(el => {
-          el.textContent = vars.version || "Not found";
-        });
-      })
-      .catch(err => console.error("Error fetching file:", err));
+      let versionElements = document.querySelectorAll(".version");
+      for (const versionElement of versionElements) {
+        versionElement.innerText = vars.version ?? "Not found";
+      }
+    }
+
+    loadVersion();
     </script>
   </footer>
 </body>
