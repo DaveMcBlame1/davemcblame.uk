@@ -22,6 +22,37 @@
     </div>
     <!-- <img src="bar.png" alt="Navigation Bar" class="navbar" /> -->
   <!-- </header> -->
+   <main>
+        <h1>Welcome to the Chat, {{ username }}!</h1>
+        <div id="chatbox">
+            {% for msg in messages %}
+                <div class="message">
+                    <img class="pfp" src="{{ msg.profile_picture_url }}" alt="Profile Picture">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="username">{{ msg.username }}:</span>
+                            <span class="message-id" data-id="{{ msg.id }}">{{ msg.id }}</span>
+                        </div>
+                        <div class="message-body">
+                            {{ msg.message }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button id="load-more">Load More</button>
+        <input type="text" id="message" placeholder="Type your message here..." {{ 'disabled' if not username else '' }}>
+        <button id="send" {{ 'disabled' if not username else '' }}>Send</button>
+        <div class="user-list">
+            <h2 class="ultitle">Users Online</h2>
+            <div class="users">
+                {% for user in users %}
+                    <p class="viewer">{{ user }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div id="typing-indicator"></div>
+    </main>
   <div class="blocks">
     <div class="block">
       <p>Minecraft Server</p>
