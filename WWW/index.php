@@ -14,16 +14,4 @@ switch ($request) {
         require __DIR__ . '/errors/404.html';
         break;
 }
-
-session_start();
-header('Content-Type: text/html; charset=utf-8');
-
-echo "<h1>Welcome</h1>";
-if(isset($_SESSION['username'])){
-    echo "<p>Hello, ".$_SESSION['username']."</p>";
-    echo "<a href='chat.php'>Go to chat</a>";
-}else{
-    echo "<a href='login.php'>Login</a> | <a href='register.php'>Register</a>";
-}
-
 ?>
