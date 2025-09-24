@@ -1,5 +1,5 @@
 body {
-    background:#f8f9fa; 
+    background:var(--bs-secondary-bg); 
     font-family: system-ui, sans-serif; 
     display:flex; 
     flex-direction:column; 
@@ -110,12 +110,17 @@ body {
 }
 
 footer {
-    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     padding: 1rem;
-    background-color: var(--bs-secondary-bg);
+    background-color: var(--bs-tertiary-color);
     color: #555;
-    position: relative;
-    bottom: 0;
     width: 100%;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+}
+
+.version {
+    font-size: 0.8rem;
+    color: #791919;
 }

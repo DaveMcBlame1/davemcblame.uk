@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <!-- <link rel="preload" href="css/default.css" as="style" onload="this.onload=null;this.rel='stylesheet'"> -->
+  <link rel="stylesheet" href="scss/bootstrap.min.css">
   <link rel="stylesheet" href="css/bsdefault.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -67,7 +68,7 @@
     <span class="version"></span>
     <script>
     async function loadVersion() {
-      const vars = await fetch("/globaldata.json")
+      const vars = await fetch("globaldata.json")
         .then(r => r.json())
         .catch(e => console.error("Error fetching file", e));
 
