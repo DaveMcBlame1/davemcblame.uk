@@ -47,25 +47,6 @@ body {
   margin-top: 5rem;
 }
 
-
-/* header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  background: #292929;
-  display: flex;
-  align-items: center;
-  justify-content: space-between; 
-  box-shadow: 0 10px rgba(0, 0, 0, 0.3);
-  color: white;
-  text-align: center;
-  z-index: 1000;
-  padding: 0 1rem;
-  font-family: glacial indifference;
-} */
-
 .header-content {
   display: flex;
   align-items: center;
@@ -204,17 +185,6 @@ a {
     color: #ffffff;
     text-decoration: none;
 }
-
-/* .fade-in {
-    opacity: 0;
-    animation: fadeIn 300ms ease-in forwards;
-  }
-  
-  @keyframes fadeIn {
-    to {
-      opacity: 1;
-    }
-  } */
 
 /* Privacy Policy Page Specific Styles */
 .PP {
