@@ -102,6 +102,46 @@ body {
   text-decoration: none;
 }
 
+.accCreation {
+  align-self: start;
+  color: #292929;
+  background-color: #fff;
+  font-size: 0.9rem;
+  padding: 0.4em 0.5em;
+  border-radius: 8px;
+  border: none;
+  margin-left: 13rem;
+  margin-top: -1.8rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.accCreation:hover {
+  text-decoration: none;
+}
+
+.accRegister {
+  align-self: start;
+  color: #292929;
+  background-color: #fff;
+  font-size: 0.9rem;
+  padding: 0.4em 0.5em;
+  border-radius: 8px;
+  border: none;
+  margin-left: 23.3rem;
+  margin-top: -1.8rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.accRegister:hover {
+  text-decoration: none;
+}
+
 .navbar {
   height: 48px;
   width: 48px; 
@@ -261,3 +301,214 @@ a {
   margin: 1rem;
 }
 
+/* Auth Forms */
+.signin, .login {
+  background: #292929;
+  color: #fff;
+  padding: 2rem 2rem 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+  max-width: 340px;
+  gap: 1rem;
+}
+
+.signin h2, .login h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.signin input, .login input {
+  width: 90%;
+  padding: 0.7em;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 0.7em;
+  font-size: 1rem;
+  background: #222;
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.signin button, .login button, #logout-btn {
+  background: linear-gradient(90deg, #00BFFF 0%, #00FFC6 100%);
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7em 1.2em;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s, color 0.2s;
+}
+
+.signin button:hover, .login button:hover, #logout-btn:hover {
+  background: linear-gradient(90deg, #00FFC6 0%, #00BFFF 100%);
+  color: #fff;
+}
+
+/* Account Register Form Layout (same as .login) */
+#register-form {
+  background: #292929;
+  color: #fff;
+  padding: 2rem 2rem 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+  max-width: 340px;
+  gap: 1rem;
+}
+
+#register-form input {
+  width: 90%;
+  padding: 0.7em;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 0.7em;
+  font-size: 1rem;
+  background: #222;
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+#register-form button {
+  background: linear-gradient(90deg, #00BFFF 0%, #00FFC6 100%);
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7em 1.2em;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s, color 0.2s;
+}
+
+#register-form button:hover {
+  background: linear-gradient(90deg, #00FFC6 0%, #00BFFF 100%);
+  color: #fff;
+}
+
+/* Chatroom Styles */
+.chatroom {
+  background: #292929;
+  color: #fff;
+  padding: 2rem 2rem 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  margin: 2rem auto;
+  min-width: 320px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chatroom h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.chat-messages {
+  width: 100%;
+  min-height: 180px;
+  max-height: 260px;
+  background: #222;
+  color: #fff;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-y: auto;
+  margin-bottom: 1em;
+  font-size: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+#chat-input {
+  width: 70%;
+  padding: 0.7em;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  background: #222;
+  color: #fff;
+  margin-right: 0.5em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+#chat-send {
+  background: linear-gradient(90deg, #00BFFF 0%, #00FFC6 100%);
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7em 1.2em;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+#chat-send:hover {
+  background: linear-gradient(90deg, #00FFC6 0%, #00BFFF 100%);
+  color: #fff;
+}
+
+/* Chat message bubbles */
+.chat-messages div {
+  margin-bottom: 0.5em;
+  padding: 0.4em 0.8em;
+  background: #333;
+  border-radius: 8px;
+  word-break: break-word;
+}
+
+.chat-messages div:last-child {
+  margin-bottom: 0;
+}
+
+.typing-indicator {
+  font-style: italic;
+  color: #00BFFF;
+  background: none;
+  padding: 0.2em 0.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.2em;
+  min-height: 1.2em;
+  text-align: left;
+  width: 100%;
+}
+
+.active-users {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1em 0;
+  color: #00FFC6;
+  font-size: 0.95em;
+}
+.active-users li {
+  margin-bottom: 0.2em;
+}
+
+@media (max-width: 600px) {
+  .signin, .login, .chatroom {
+    min-width: 95vw;
+    max-width: 98vw;
+    padding: 1rem;
+  }
+  .chat-messages {
+    min-height: 120px;
+    max-height: 180px;
+    font-size: 0.95rem;
+  }
+}

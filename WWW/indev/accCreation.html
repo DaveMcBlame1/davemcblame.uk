@@ -7,13 +7,44 @@
   <link rel="logo" href="../Multigrounds.png" />
   <link rel="navbar" href="../bar.png" />
   <title>WIP</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4511158997703619"
+     crossorigin="anonymous"></script>
 </head>
+<script>(function(s){s.dataset.zone='9922948',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
+<script>(function(s){s.dataset.zone='9922963',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 <body class="fade-in">
     
   <a href="/" class="home-link"> </a>
   <img src="../Multigrounds.png" alt="Logo" class="logo"/>
   <a href="pages/policy" class="privacy-link">Privacy Policy</a>
 
+    <!-- Sign-in UI -->
+    <div id="signin" class="signin">
+      <h2>Sign In</h2>
+      <input type="text" id="signin-username" placeholder="Enter your username" autocomplete="off" />
+      <button id="signin-btn">Sign In</button>
+    </div>
+
+    <!-- Login UI -->
+    <div id="login" class="login" style="display:none;">
+      <h2>Login</h2>
+      <input type="text" id="login-username" placeholder="Username" autocomplete="off" />
+      <input type="password" id="login-password" placeholder="Password" autocomplete="off" />
+      <button id="login-btn">Login</button>
+    </div>
+    <button id="logout-btn" style="display:none;">Logout</button>
+
+    <!-- Chatroom UI -->
+    <div id="chatroom" class="chatroom" style="display:none;">
+      <h2>Chat Room</h2>
+      <div id="chat-messages" class="chat-messages"></div>
+      <input type="text" id="chat-input" placeholder="Type your message..." autocomplete="off" />
+      <button id="chat-send">Send</button>
+      <div id="typing-indicator" class="typing-indicator"></div>
+      <ul id="active-users" class="active-users"></ul>
+    </div>
+  
   <div class="blocks">
     <div class="block">
       <p>Minecraft Server</p>
@@ -38,6 +69,165 @@
       <p>This website is both a passion project and a portfolio. I’ll use it to share side projects for others to explore or reference. I’m mostly self-taught, with some formal education, and I built and manage this site myself.</p>
     </div>
   </div>
+
+<script>
+  // Show sign-in if no username in localStorage
+  function showSignIn() {
+    document.getElementById('signin').style.display = '';
+    document.getElementById('chatroom').style.display = 'none';
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+  }
+  function showLogin() {
+    document.getElementById('signin').style.display = 'none';
+    document.getElementById('chatroom').style.display = 'none';
+    document.getElementById('login').style.display = '';
+    document.getElementById('logout-btn').style.display = 'none';
+  }
+  function showChat() {
+    document.getElementById('signin').style.display = 'none';
+    document.getElementById('chatroom').style.display = '';
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('logout-btn').style.display = '';
+  }
+
+  let username = localStorage.getItem('chatUsername');
+  let password = localStorage.getItem('chatPassword');
+  let ws;
+
+  if (!username || !password) {
+    showLogin();
+  } else {
+    connectChat(username, password);
+  }
+
+  document.getElementById('login-btn').onclick = () => {
+    const name = document.getElementById('login-username').value.trim();
+    const pass = document.getElementById('login-password').value;
+    if (name && pass) {
+      localStorage.setItem('chatUsername', name);
+      localStorage.setItem('chatPassword', pass);
+      connectChat(name, pass);
+    }
+  };
+
+  document.getElementById('logout-btn').onclick = () => {
+    localStorage.removeItem('chatUsername');
+    localStorage.removeItem('chatPassword');
+    if (ws) ws.close();
+    showLogin();
+  };
+
+  function connectChat(username, password) {
+    ws = new WebSocket('wss://multigrounds.org/api');
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'login', username, password }));
+    };
+    let typingTimeout;
+    let typingUsers = [];
+
+    document.getElementById('chat-input').addEventListener('input', function() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'typing' }));
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          ws.send(JSON.stringify({ type: 'stop_typing' }));
+        }, 1000); // 1 second delay
+      }
+    });
+
+    function updateTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (typingUsers.length === 0) {
+        indicator.textContent = '';
+        return;
+      }
+      if (typingUsers.length === 1) {
+        indicator.textContent = `${typingUsers[0]} is typing...`;
+      } else if (typingUsers.length === 2) {
+        indicator.textContent = `${typingUsers[0]} and ${typingUsers[1]} are typing...`;
+      } else {
+        const last = typingUsers[typingUsers.length - 1];
+        const rest = typingUsers.slice(0, -1).join(', ');
+        indicator.textContent = `${rest}, and ${last} are typing...`;
+      }
+    }
+
+    async function loadPreviousMessages() {
+      const res = await fetch('/api/messages');
+      const messages = await res.json();
+      const chatMessages = document.getElementById('chat-messages');
+      chatMessages.innerHTML = '';
+      messages.forEach(msg => {
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = `${msg.username}: ${msg.body}`;
+        chatMessages.appendChild(msgDiv);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    ws.onmessage = e => {
+      let data;
+      try { data = JSON.parse(e.data); } catch { return; }
+      if (data.type === 'login') {
+        if (data.success) {
+          showChat();
+          loadPreviousMessages(); // <-- Load previous messages here
+        } else {
+          alert(data.message || 'Login failed');
+          showLogin();
+        }
+        return;
+      }
+      if (data.type === 'typing' && data.username) {
+        if (!typingUsers.includes(data.username)) {
+          typingUsers.push(data.username);
+          updateTypingIndicator();
+        }
+        return;
+      }
+      if (data.type === 'stop_typing' && data.username) {
+        typingUsers = typingUsers.filter(u => u !== data.username);
+        updateTypingIndicator();
+        return;
+      }
+      if (data.type === 'users' && Array.isArray(data.users)) {
+        const userList = document.getElementById('active-users');
+        userList.innerHTML = '';
+        data.users.forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = u;
+          userList.appendChild(li);
+        });
+        return;
+      }
+      if (data.message && data.username) {
+        const chatMessages = document.getElementById('chat-messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = `${data.username}: ${data.message}`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    };
+
+    };
+    ws.onerror = e => console.error('WebSocket error', e);
+
+    document.getElementById('chat-send').onclick = () => {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (message) {
+        ws.send(JSON.stringify({ message }));
+        input.value = '';
+      }
+    };
+    document.getElementById('chat-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('chat-send').click();
+      }
+    });
+</script>
+
 
   <footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>

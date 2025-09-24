@@ -2,21 +2,15 @@
 <html lang="en">
 <head>
   <!-- <link rel="preload" href="css/default.css" as="style" onload="this.onload=null;this.rel='stylesheet'"> -->
-  <link rel="stylesheet" href="css/default.css">
+  <link rel="stylesheet" href="../css/default.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="logo" href="Multigrounds.png" />
   <link rel="navbar" href="bar.png" />
   <title>Home</title>
-  <meta name="monetag" content="baa0fcddee00768439743d2e9dd1e5ca">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4511158997703619"
+     crossorigin="anonymous"></script>
 </head>
-
-<script>(function(s){s.dataset.zone='9922948',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
-<script>(function(s){s.dataset.zone='9922963',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
-<script src="https://aiharsoreersu.net/act/files/tag.min.js?z=9922969" data-cfasync="false" async></script>
-
 <body class="fade-in">
   <!-- <style>
     /* Set everything to black */
@@ -24,13 +18,18 @@
   </style> -->
   <!-- <header class="header"> -->
     <a href="/" class="home-link"> </a>
-    <img src="Multigrounds.png" alt="Logo" class="logo"/> <a href="pages/policy" class="privacy-link">Privacy Policy</a>
-    <a href="indev/accCreation" class="accCreation">Login To ChatRoom</a>
-    <a href="indev/accRegister" class="accRegister">Register</a>
+    <img src="../Multigrounds.png" alt="Logo" class="logo"/> <a href="pages/policy" class="privacy-link">Privacy Policy</a>
     <!-- <div class="header-content"> -->
     </div>
     <!-- <img src="bar.png" alt="Navigation Bar" class="navbar" /> -->
   <!-- </header> -->
+   <form id="register-form">
+    <h2>Register</h2>
+    <input type="text" id="reg-username" placeholder="Username" required />
+    <input type="password" id="reg-password" placeholder="Password" required />
+    <button type="submit">Register</button>
+  </form>
+  <div id="register-result"></div>
   <div class="blocks">
     <div class="block">
       <p>Minecraft Server</p>
@@ -48,6 +47,7 @@
     <div class="block"><p>Blank</p></div>
     <div class="block2"><p>This website is both a passion project and a portfolio. I’ll use it to share side projects for others to explore or reference. I’m mostly self-taught, with some formal education, and I built and manage this site myself.</p></div>
   </div>
+  
   <footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
@@ -64,6 +64,19 @@
     }
 
     loadVersion();
+
+    document.getElementById('register-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('reg-username').value;
+      const password = document.getElementById('reg-password').value;
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      document.getElementById('register-result').textContent = data.message;
+    };
     </script>
   </footer>
 </body>

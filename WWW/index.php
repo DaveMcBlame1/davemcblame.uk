@@ -13,5 +13,11 @@ switch ($request) {
         http_response_code(404);
         require __DIR__ . '/errors/404.html';
         break;
+    case '/indev/accCreation':
+        require __DIR__ . '/indev/accCreation.html';
+        break;
+    case '/indev/accRegister':
+        require __DIR__ . '/indev/accRegister.html';
+        break;
 }
 ?>
