@@ -109,8 +109,12 @@ body {
     text-decoration: none;
 }
 
+main {
+    flex: 1;
+}
+
 footer {
-    display: flex;
+    margin-top: auto;
     flex-direction: row;
     justify-content: space-between;
     padding: 1rem;
