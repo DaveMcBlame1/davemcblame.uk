@@ -21,5 +21,14 @@ switch ($request) {
         http_response_code(403);
         require __DIR__ . '/errors/403.html';
         break;
+    case '/pages/billing':
+        require __DIR__ . '/pages/billing.html';
+        break;
+    case '/pages/terms':
+        require __DIR__ . '/pages/terms.html';
+        break;
+    case '/pages/support':
+        require __DIR__ . '/pages/support.html';
+        break;
 }
 ?>

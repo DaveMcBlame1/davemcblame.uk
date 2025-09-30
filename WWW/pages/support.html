@@ -1,33 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- <link rel="preload" href="css/default.css" as="style" onload="this.onload=null;this.rel='stylesheet'"> -->
-  <link rel="stylesheet" href="scss/bootstrap.min.css">
-  <link rel="stylesheet" href="css/bsdefault.css">
+  <link rel="stylesheet" href="../scss/bootstrap.min.css">
+  <link rel="stylesheet" href="../css/bsdefault.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="logo" href="Multigrounds.png" />
-  <title>Home</title>
+  <title>Support</title>
 </head>
-<body>
+<body class="PP">
   <header class="header">
-    <a href="/"> <img src="Multigrounds.png" alt="Logo" class="logo"/></a>
+    <a href="/"> <img src="../Multigrounds.png" alt="Logo" class="logo"/></a>
     <div class="top-links">
       <a href="pages/policy">Privacy Policy</a>
       <a href="pages/terms">Terms of Service</a>
-      <a href="/">Purchase An Page</a>
-      <a href="/">Support</a>
+      <a href="pages/billing">Purchase An Page</a>
+      <a href="pages/support">Support</a>
     </div>
   </header>
-    
-
-
-  <footer class="footer">
+    <main>
+        <section>
+            <h2>Contact Us</h2>
+            <p>If you have any questions or need assistance, please reach out to us.</p>
+        </section>
+    </main>
+    <footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
     <script>
     async function loadVersion() {
-      const vars = await fetch("globaldata.json")
+      const vars = await fetch("/globaldata.json")
         .then(r => r.json())
         .catch(e => console.error("Error fetching file", e));
 
