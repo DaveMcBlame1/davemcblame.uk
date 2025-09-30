@@ -237,6 +237,27 @@ async function loadTickets() {
         commentsHtml += '</div>';
       }
       
+      // Comment section - only show if ticket is not closed
+      let commentSection = '';
+      if (ticket.status !== 'closed') {
+        commentSection = `
+          <div class="mt-3">
+            <div class="input-group">
+              <textarea class="form-control" id="comment-${ticket.id}" placeholder="Add a comment..." rows="2"></textarea>
+              <button class="btn btn-outline-primary" onclick="addComment(${ticket.id})">Add Comment</button>
+            </div>
+          </div>
+        `;
+      } else {
+        commentSection = `
+          <div class="mt-3">
+            <div class="alert alert-secondary small mb-0">
+              <i class="fas fa-lock"></i> Comments are disabled on closed tickets
+            </div>
+          </div>
+        `;
+      }
+      
       div.innerHTML = `
         <div class="d-flex justify-content-between align-items-start">
           <h5>${ticket.title}</h5>
@@ -249,12 +270,7 @@ async function loadTickets() {
         <small><strong>By:</strong> ${ticket.username} | <strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</small>
         ${statusControls}
         ${commentsHtml}
-        <div class="mt-3">
-          <div class="input-group">
-            <textarea class="form-control" id="comment-${ticket.id}" placeholder="Add a comment..." rows="2"></textarea>
-            <button class="btn btn-outline-primary" onclick="addComment(${ticket.id})">Add Comment</button>
-          </div>
-        </div>
+        ${commentSection}
       `;
       list.appendChild(div);
     });
@@ -292,7 +308,7 @@ async function addComment(ticketId) {
     document.getElementById(`comment-${ticketId}`).value = '';
     loadTickets();
   } else {
-    alert(data.message);
+    alert(data.message); // Will show "Cannot comment on closed tickets"
   }
 }
 </script>
