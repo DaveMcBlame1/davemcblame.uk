@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/bsdefault.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="logo" href="../Multigrounds.png" />
+    <title>Email Verification</title>
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="loading" class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h3 id="title" style="display: none;">Email Verification</h3>
+                        <p id="message" style="display: none;"></p>
+                        <a href="/pages/support" id="login-link" class="btn btn-primary" style="display: none;">Go to Login</a>
+                        <button id="resend-btn" class="btn btn-outline-secondary" style="display: none;" onclick="showResendForm()">Resend Verification</button>
+                    </div>
+                </div>
+                
+                <!-- Resend verification form -->
+                <div id="resend-form" class="card mt-3" style="display: none;">
+                    <div class="card-body">
+                        <h5>Resend Verification Email</h5>
+                        <form id="resend-verification">
+                            <div class="mb-3">
+                                <input type="email" id="resend-email" class="form-control" placeholder="Enter your email" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Resend Email</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideResendForm()">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.multigrounds.org:10065/api';
+        
+        async function verifyEmail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (!token) {
+                showResult('Error', 'No verification token provided.', false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/verify-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await response.json();
+                showResult(
+                    data.success ? 'Success!' : 'Verification Failed',
+                    data.message,
+                    data.success
+                );
+            } catch (error) {
+                showResult('Error', 'Failed to verify email. Please try again.', false);
+            }
+        }
+        
+        function showResult(title, message, success) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('title').textContent = title;
+            document.getElementById('message').textContent = message;
+            document.getElementById('title').style.display = 'block';
+            document.getElementById('message').style.display = 'block';
+            
+            if (success) {
+                document.getElementById('login-link').style.display = 'inline-block';
+            } else {
+                document.getElementById('resend-btn').style.display = 'inline-block';
+            }
+        }
+        
+        function showResendForm() {
+            document.getElementById('resend-form').style.display = 'block';
+        }
+        
+        function hideResendForm() {
+            document.getElementById('resend-form').style.display = 'none';
+        }
+        
+        document.getElementById('resend-verification').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resend-email').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/resend-verification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                alert(data.message);
+                
+                if (data.success) {
+                    hideResendForm();
+                }
+            } catch (error) {
+                alert('Failed to resend verification email. Please try again.');
+            }
+        };
+        
+        // Start verification when page loads
+        verifyEmail();
+    </script>
+</body>
+</html>
