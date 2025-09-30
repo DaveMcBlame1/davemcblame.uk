@@ -18,12 +18,198 @@
       <a href="/pages/support">Support</a>
     </div>
   </header>
-    <main>
-        <section>
-            <h2>Contact Us</h2>
-            <p>If you have any questions or need assistance, please reach out to us.</p>
-        </section>
-    </main>
+    <main class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      
+      <!-- Login Form -->
+      <div id="login-section" class="card mb-4">
+        <div class="card-body">
+          <h3>Login to Submit Tickets</h3>
+          <form id="login-form">
+            <div class="mb-3">
+              <input type="text" id="login-username" class="form-control" placeholder="Username" required>
+            </div>
+            <div class="mb-3">
+              <input type="password" id="login-password" class="form-control" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="button" id="show-register" class="btn btn-link">Need an account? Register</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <div id="register-section" class="card mb-4" style="display: none;">
+        <div class="card-body">
+          <h3>Create Account</h3>
+          <form id="register-form">
+            <div class="mb-3">
+              <input type="text" id="reg-username" class="form-control" placeholder="Username" required>
+            </div>
+            <div class="mb-3">
+              <input type="email" id="reg-email" class="form-control" placeholder="Email" required>
+            </div>
+            <div class="mb-3">
+              <input type="password" id="reg-password" class="form-control" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn btn-success">Register</button>
+            <button type="button" id="show-login" class="btn btn-link">Already have an account? Login</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Ticket System (hidden until logged in) -->
+      <div id="ticket-section" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>Support Tickets</h2>
+          <button id="logout-btn" class="btn btn-outline-danger">Logout</button>
+        </div>
+        
+        <!-- Create Ticket Form -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h4>Submit New Ticket</h4>
+            <form id="ticket-form">
+              <div class="mb-3">
+                <input type="text" id="ticket-title" class="form-control" placeholder="Ticket Title" required>
+              </div>
+              <div class="mb-3">
+                <textarea id="ticket-description" class="form-control" rows="4" placeholder="Describe your issue..." required></textarea>
+              </div>
+              <div class="mb-3">
+                <select id="ticket-priority" class="form-select">
+                  <option value="low">Low Priority</option>
+                  <option value="medium" selected>Medium Priority</option>
+                  <option value="high">High Priority</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Submit Ticket</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Ticket List -->
+        <div class="card">
+          <div class="card-body">
+            <h4>Your Tickets</h4>
+            <div id="tickets-list">
+              <!-- Tickets will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API_BASE = 'http://localhost:5000/api';
+
+// Show/hide forms
+document.getElementById('show-register').onclick = () => {
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('register-section').style.display = 'block';
+};
+
+document.getElementById('show-login').onclick = () => {
+  document.getElementById('register-section').style.display = 'none';
+  document.getElementById('login-section').style.display = 'block';
+};
+
+// Registration
+document.getElementById('register-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch(`${API_BASE}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: document.getElementById('reg-username').value,
+      email: document.getElementById('reg-email').value,
+      password: document.getElementById('reg-password').value
+    })
+  });
+  const data = await res.json();
+  alert(data.message);
+  if (data.success) {
+    document.getElementById('register-section').style.display = 'none';
+    document.getElementById('login-section').style.display = 'block';
+  }
+};
+
+// Login
+document.getElementById('login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch(`${API_BASE}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      username: document.getElementById('login-username').value,
+      password: document.getElementById('login-password').value
+    })
+  });
+  const data = await res.json();
+  if (data.success) {
+    showTicketSection();
+    loadTickets();
+  } else {
+    alert(data.message);
+  }
+};
+
+// Logout
+document.getElementById('logout-btn').onclick = async () => {
+  await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
+  location.reload();
+};
+
+// Create ticket
+document.getElementById('ticket-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch(`${API_BASE}/tickets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      title: document.getElementById('ticket-title').value,
+      description: document.getElementById('ticket-description').value,
+      priority: document.getElementById('ticket-priority').value
+    })
+  });
+  const data = await res.json();
+  alert(data.message);
+  if (data.success) {
+    document.getElementById('ticket-form').reset();
+    loadTickets();
+  }
+};
+
+function showTicketSection() {
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('register-section').style.display = 'none';
+  document.getElementById('ticket-section').style.display = 'block';
+}
+
+async function loadTickets() {
+  const res = await fetch(`${API_BASE}/tickets`, { credentials: 'include' });
+  const data = await res.json();
+  if (data.success) {
+    const list = document.getElementById('tickets-list');
+    list.innerHTML = '';
+    data.tickets.forEach(ticket => {
+      const div = document.createElement('div');
+      div.className = 'border p-3 mb-2 rounded';
+      div.innerHTML = `
+        <h6>${ticket.title} <span class="badge bg-${ticket.status === 'open' ? 'danger' : ticket.status === 'in-progress' ? 'warning' : 'success'}">${ticket.status}</span></h6>
+        <p>${ticket.description}</p>
+        <small>Created: ${new Date(ticket.created_at).toLocaleString()} | Priority: ${ticket.priority}</small>
+      `;
+      list.appendChild(div);
+    });
+  }
+}
+</script>
     <footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
