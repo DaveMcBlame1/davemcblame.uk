@@ -492,6 +492,23 @@ function showTicketSection() {
     document.getElementById('admin-badge').style.display = 'inline-block';
   }
 }
+
+// Check if user is already logged in
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch(`${API_BASE}/check-login`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && data.logged_in) {
+            console.log('User already logged in:', data.user.username);
+            loadDashboard(); // Auto-load dashboard if logged in
+        }
+    } catch (error) {
+        console.error('Error checking login status:', error);
+    }
+});
 </script>
 
     <footer class="footer">

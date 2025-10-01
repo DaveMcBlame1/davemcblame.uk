@@ -1,4 +1,4 @@
-const API_BASE = 'https://api.multigrounds.org:10065/api';
+const API_BASE = 'https://multigrounds.org:10065/api';  // Fixed URL
 let currentPage = null;
 let pageBlocks = [];
 let currentEditingBlock = null;

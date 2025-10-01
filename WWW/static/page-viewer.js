@@ -1,11 +1,11 @@
-const API_BASE = 'https://api.multigrounds.org:10065/api';
+const API_BASE = 'https://multigrounds.org:10065/api';  // Fixed URL
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Get subdomain from URL path
     const pathParts = window.location.pathname.split('/');
     const subdomain = pathParts[1]; // multigrounds.org/SUBDOMAIN
     
-    if (subdomain && subdomain !== 'pages') {
+    if (subdomain && subdomain !== 'pages' && subdomain !== 'static') {
         await loadPageData(subdomain);
     }
 });
@@ -13,7 +13,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadPageData(subdomain) {
     try {
         const response = await fetch(`${API_BASE}/page/${subdomain}`, {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
         if (response.ok) {
