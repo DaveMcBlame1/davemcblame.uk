@@ -63,6 +63,23 @@
             border-color: #007bff;
             background-color: rgba(0, 123, 255, 0.1);
         }
+        
+        .page-item {
+            transition: all 0.2s ease;
+        }
+        
+        .page-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .page-item.border-primary {
+            border-width: 2px !important;
+        }
+        
+        .badge-sm {
+            font-size: 0.7em;
+        }
     </style>
 </head>
 <body>
@@ -77,10 +94,35 @@
                     </button>
                 </div>
                 
+                <!-- My Pages Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">My Pages</h6>
+                            <button class="btn btn-outline-primary btn-sm" onclick="refreshMyPages()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div id="my-pages-list" class="mb-3">
+                            <div class="text-center text-muted">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <small class="d-block mt-2">Loading your pages...</small>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <a href="/pages/billing" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus"></i> Create New Page
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Page Settings -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h6>Page Settings</h6>
+                        <h6>Current Page Settings</h6>
                         <div class="mb-3">
                             <label class="form-label">Page Title</label>
                             <input type="text" id="page-title" class="form-control" placeholder="My Awesome Page">
@@ -91,6 +133,9 @@
                                 <input type="text" id="page-subdomain" class="form-control" placeholder="mypage">
                                 <span class="input-group-text">.multigrounds.org</span>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <small id="page-url" class="text-muted">Select a page to edit</small>
                         </div>
                     </div>
                 </div>
@@ -209,6 +254,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = data.user;
         console.log('User logged in:', currentUser.username);
         
+        // Load user's pages first
+        await loadMyPages();
+        
         // Get page parameter from URL
         const urlParams = new URLSearchParams(window.location.search);
         const pageSubdomain = urlParams.get('page');
@@ -218,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await loadPageForEditingHTML(pageSubdomain);
         } else {
             console.log('No page parameter found, showing default state');
-            showPageSelectorHTML();
+            showEmptyBuilderHTML();
         }
         
     } catch (error) {
@@ -255,13 +303,23 @@ async function loadPageForEditingHTML(subdomain) {
             
             // Load the page data into the builder
             if (data.page.page_data) {
-                const pageData = JSON.parse(data.page.page_data);
-                if (pageData.blocks && pageData.blocks.length > 0) {
-                    loadBlocksIntoCanvasHTML(pageData.blocks);
-                } else {
+                try {
+                    const pageData = JSON.parse(data.page.page_data);
+                    console.log('Parsed page data:', pageData);
+                    
+                    if (pageData.blocks && pageData.blocks.length > 0) {
+                        console.log('Loading blocks:', pageData.blocks);
+                        loadBlocksIntoCanvasHTML(pageData.blocks);
+                    } else {
+                        console.log('No blocks found, showing empty builder');
+                        showEmptyBuilderHTML();
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing page data:', parseError);
                     showEmptyBuilderHTML();
                 }
             } else {
+                console.log('No page data, showing empty builder');
                 showEmptyBuilderHTML();
             }
             
@@ -277,6 +335,183 @@ async function loadPageForEditingHTML(subdomain) {
     }
 }
 
+// Load user's pages into the sidebar
+async function loadMyPages() {
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    const myPagesList = document.getElementById('my-pages-list');
+    
+    if (!myPagesList) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/my-pages`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && data.pages.length > 0) {
+            displayMyPages(data.pages);
+        } else {
+            myPagesList.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-file-alt fa-2x mb-2"></i>
+                    <small class="d-block">No pages yet</small>
+                    <small class="d-block">Create your first page!</small>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading my pages:', error);
+        myPagesList.innerHTML = `
+            <div class="text-center text-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <small class="d-block">Error loading pages</small>
+            </div>
+        `;
+    }
+}
+
+function displayMyPages(pages) {
+    const myPagesList = document.getElementById('my-pages-list');
+    if (!myPagesList) return;
+    
+    const currentSubdomain = window.currentSubdomain;
+    
+    myPagesList.innerHTML = pages.map(page => {
+        const isActive = page.subdomain === currentSubdomain;
+        const activeClass = isActive ? 'border-primary bg-light' : '';
+        const activeIcon = isActive ? '<i class="fas fa-edit text-primary ms-2"></i>' : '';
+        
+        return `
+            <div class="page-item card mb-2 ${activeClass}" style="cursor: pointer;" onclick="switchToPage('${page.subdomain}')">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 small">${page.title}</h6>
+                            <small class="text-muted">${page.subdomain}</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-${page.plan === 'solo' ? 'primary' : page.plan === 'business' ? 'success' : 'warning'} badge-sm me-1">
+                                ${page.plan}
+                            </span>
+                            ${activeIcon}
+                        </div>
+                    </div>
+                    <div class="mt-1">
+                        <a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none small" onclick="event.stopPropagation();">
+                            <i class="fas fa-external-link-alt"></i> View Live
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Switch to editing a different page
+async function switchToPage(subdomain) {
+    if (subdomain === window.currentSubdomain) {
+        return; // Already editing this page
+    }
+    
+    // Check if current page has unsaved changes
+    const hasUnsavedChanges = checkForUnsavedChanges();
+    if (hasUnsavedChanges) {
+        const confirmSwitch = confirm('You have unsaved changes. Do you want to save before switching pages?');
+        if (confirmSwitch) {
+            await savePage();
+        }
+    }
+    
+    console.log('Switching to page:', subdomain);
+    
+    // Update URL without reload
+    const newUrl = `${window.location.pathname}?page=${subdomain}`;
+    window.history.pushState({page: subdomain}, '', newUrl);
+    
+    // Load the new page
+    await loadPageForEditingHTML(subdomain);
+    
+    // Refresh the pages list to show active state
+    await loadMyPages();
+}
+
+// Check if there are unsaved changes (simplified check)
+function checkForUnsavedChanges() {
+    // This is a simple check - in a real app you'd track changes more thoroughly
+    const canvas = document.getElementById('canvas');
+    const blocks = canvas.querySelectorAll('.editable-block');
+    
+    // For now, just return false - you can implement change tracking later
+    return false;
+}
+
+// Refresh the pages list
+async function refreshMyPages() {
+    const refreshButton = document.querySelector('[onclick="refreshMyPages()"]');
+    const originalHTML = refreshButton.innerHTML;
+    
+    // Show loading state
+    refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    refreshButton.disabled = true;
+    
+    try {
+        await loadMyPages();
+    } finally {
+        // Restore button
+        setTimeout(() => {
+            refreshButton.innerHTML = originalHTML;
+            refreshButton.disabled = false;
+        }, 500);
+    }
+}
+
+// Update the main DOMContentLoaded function to load pages
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Builder HTML loaded, initializing...');
+    
+    // Use the API_BASE from builder.js
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    
+    // First check if user is logged in
+    try {
+        const response = await fetch(`${API_BASE}/check-login`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (!data.success || !data.logged_in) {
+            alert('Please log in first to use the page builder.');
+            window.location.href = '/pages/support';
+            return;
+        }
+        
+        // Use existing global variables from builder.js
+        currentUser = data.user;
+        console.log('User logged in:', currentUser.username);
+        
+        // Load user's pages first
+        await loadMyPages();
+        
+        // Get page parameter from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageSubdomain = urlParams.get('page');
+        
+        if (pageSubdomain) {
+            console.log('Loading page:', pageSubdomain);
+            await loadPageForEditingHTML(pageSubdomain);
+        } else {
+            console.log('No page parameter found, showing default state');
+            showEmptyBuilderHTML();
+        }
+        
+    } catch (error) {
+        console.error('Error checking login:', error);
+        alert('Error checking login status. Please try again.');
+        window.location.href = '/pages/support';
+    }
+});
+
+// Update the updatePageDisplayHTML function to refresh the pages list
 function updatePageDisplayHTML(page) {
     // Update page title
     const titleInput = document.getElementById('page-title');
@@ -295,207 +530,13 @@ function updatePageDisplayHTML(page) {
     // Update page URL display
     const urlElement = document.getElementById('page-url');
     if (urlElement) {
-        urlElement.innerHTML = `<a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none">
-            View Live: multigrounds.org/sites/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
+        urlElement.innerHTML = `<a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none small">
+            <i class="fas fa-external-link-alt"></i> View Live: ${page.subdomain}.multigrounds.org
         </a>`;
     }
-}
-
-function loadBlocksIntoCanvasHTML(blocks) {
-    console.log('Loading blocks into canvas:', blocks);
     
-    const canvas = document.getElementById('canvas');
-    if (!canvas) {
-        console.error('Canvas element not found');
-        return;
-    }
-    
-    // Clear existing content
-    canvas.innerHTML = '';
-    
-    // Add each block to the canvas
-    blocks.forEach((block, index) => {
-        const blockElement = createCanvasBlockHTML(block, index);
-        canvas.appendChild(blockElement);
-        
-        // Add drop zone after each block
-        const dropZone = createDropZoneHTML();
-        canvas.appendChild(dropZone);
-    });
-    
-    // Always end with a drop zone
-    if (blocks.length === 0) {
-        const dropZone = createDropZoneHTML();
-        dropZone.innerHTML = '<span class="text-muted">Drag blocks here to start building your page</span>';
-        canvas.appendChild(dropZone);
-    }
-}
-
-function createCanvasBlockHTML(block, index) {
-    const blockDiv = document.createElement('div');
-    blockDiv.className = 'editable-block mb-3 p-3';
-    blockDiv.dataset.blockIndex = index;
-    blockDiv.dataset.blockType = block.type;
-    
-    const content = block.content || {};
-    
-    // Add block controls
-    const controls = document.createElement('div');
-    controls.className = 'block-controls';
-    controls.innerHTML = `
-        <div class="btn-group btn-group-sm">
-            <button class="btn btn-primary btn-sm" onclick="editBlockHTML(${index})" title="Edit">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteBlockHTML(${index})" title="Delete">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `;
-    
-    blockDiv.appendChild(controls);
-    
-    // Add block content based on type
-    const contentDiv = document.createElement('div');
-    
-    switch (block.type) {
-        case 'header':
-            contentDiv.innerHTML = `<h${content.level || 1} class="text-${content.align || 'left'} mb-0">${content.text || 'Header'}</h${content.level || 1}>`;
-            break;
-            
-        case 'text':
-            contentDiv.innerHTML = `<p class="text-${content.align || 'left'} mb-0">${content.text || 'Text content'}</p>`;
-            break;
-            
-        case 'image':
-            if (content.src) {
-                contentDiv.innerHTML = `
-                    <div class="text-${content.align || 'center'}">
-                        <img src="${content.src}" alt="${content.alt || ''}" class="img-fluid" style="max-width: ${content.maxWidth || '100%'}">
-                    </div>
-                `;
-            } else {
-                contentDiv.innerHTML = `<div class="text-center p-4 bg-light border">No image selected</div>`;
-            }
-            break;
-            
-        case 'button':
-            contentDiv.innerHTML = `
-                <div class="text-${content.align || 'center'}">
-                    <a href="${content.link || '#'}" class="btn btn-${content.style || 'primary'}">${content.text || 'Button'}</a>
-                </div>
-            `;
-            break;
-            
-        case 'spacer':
-            contentDiv.innerHTML = `<div style="height: ${content.height || '50px'};" class="bg-light border"></div>`;
-            break;
-            
-        default:
-            contentDiv.innerHTML = `<p class="text-muted">Unknown block type: ${block.type}</p>`;
-    }
-    
-    blockDiv.appendChild(contentDiv);
-    return blockDiv;
-}
-
-function createDropZoneHTML() {
-    const dropZone = document.createElement('div');
-    dropZone.className = 'drop-zone';
-    dropZone.innerHTML = '<span class="text-muted">Drop block here</span>';
-    
-    // Add drop zone event listeners
-    dropZone.addEventListener('dragover', handleDragOverHTML);
-    dropZone.addEventListener('drop', handleDropHTML);
-    dropZone.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragleave', (e) => {
-        if (!dropZone.contains(e.relatedTarget)) {
-            dropZone.classList.remove('drag-over');
-        }
-    });
-    
-    return dropZone;
-}
-
-function showEmptyBuilderHTML() {
-    const canvas = document.getElementById('canvas');
-    if (canvas) {
-        canvas.innerHTML = `
-            <div class="drop-zone">
-                <span class="text-muted">Drag blocks here to start building your page</span>
-            </div>
-        `;
-        
-        const dropZone = canvas.querySelector('.drop-zone');
-        dropZone.addEventListener('dragover', handleDragOverHTML);
-        dropZone.addEventListener('drop', handleDropHTML);
-        dropZone.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-        dropZone.addEventListener('dragleave', (e) => {
-            if (!dropZone.contains(e.relatedTarget)) {
-                dropZone.classList.remove('drag-over');
-            }
-        });
-    }
-}
-
-function showPageSelectorHTML() {
-    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
-    
-    fetch(`${API_BASE}/my-pages`, {
-        credentials: 'include'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.pages.length > 0) {
-            showPageSelectorModalHTML(data.pages);
-        } else {
-            alert('You need to create a page first before using the builder.');
-            window.location.href = '/pages/billing';
-        }
-    })
-    .catch(error => {
-        console.error('Error loading pages:', error);
-        alert('Error loading your pages. Please try again.');
-        window.location.href = '/pages/billing';
-    });
-}
-
-function showPageSelectorModalHTML(pages) {
-    const modal = document.createElement('div');
-    modal.className = 'modal fade';
-    modal.innerHTML = `
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Select Page to Edit</h5>
-                </div>
-                <div class="modal-body">
-                    <p>Which page would you like to edit?</p>
-                    <div class="list-group">
-                        ${pages.map(page => `
-                            <a href="/pages/builder.html?page=${page.subdomain}" class="list-group-item list-group-item-action">
-                                <h6>${page.title}</h6>
-                                <small class="text-muted">${page.subdomain} - ${page.plan} plan</small>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <a href="/pages/billing" class="btn btn-primary">Create New Page</a>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
+    // Refresh pages list to show active state
+    loadMyPages();
 }
 
 // Drag and Drop functionality
@@ -509,19 +550,31 @@ function handleDropHTML(e) {
     e.currentTarget.classList.remove('drag-over');
     
     const blockType = e.dataTransfer.getData('text/plain');
+    console.log('Block dropped:', blockType);
+    
     if (blockType) {
         addBlockToCanvasHTML(blockType, e.currentTarget);
+    } else {
+        console.error('No block type found in drop data');
     }
 }
 
 function addBlockToCanvasHTML(blockType, dropZone) {
+    console.log('Adding block to canvas:', blockType);
+    
     const newBlock = createDefaultBlockHTML(blockType);
-    const blockElement = createCanvasBlockHTML(newBlock, Date.now()); // Use timestamp as temp index
+    const blockElement = createCanvasBlockHTML(newBlock, Date.now());
     
     // Replace drop zone with block + new drop zone
     const newDropZone = createDropZoneHTML();
+    
+    console.log('Inserting block element before drop zone');
     dropZone.parentNode.insertBefore(blockElement, dropZone);
+    
+    console.log('Inserting new drop zone after block');
     dropZone.parentNode.insertBefore(newDropZone, dropZone.nextSibling);
+    
+    console.log('Block added successfully');
 }
 
 function createDefaultBlockHTML(blockType) {
@@ -660,16 +713,27 @@ function deleteBlockHTML(index) {
 }
 
 // Set up drag and drop for sidebar blocks
-document.addEventListener('DOMContentLoaded', () => {
-    const blockItems = document.querySelectorAll('.block-item[draggable="true"]');
+function setupDragAndDrop() {
+    console.log('Setting up drag and drop for sidebar blocks');
     
-    blockItems.forEach(item => {
+    const blockItems = document.querySelectorAll('.block-item[draggable="true"]');
+    console.log('Found block items:', blockItems.length);
+    
+    blockItems.forEach((item, index) => {
+        console.log(`Setting up drag for block ${index}:`, item.dataset.blockType);
+        
         item.addEventListener('dragstart', (e) => {
-            const blockType = e.target.dataset.blockType;
+            const blockType = e.currentTarget.dataset.blockType;
+            console.log('Drag started for block type:', blockType);
             e.dataTransfer.setData('text/plain', blockType);
             e.dataTransfer.effectAllowed = 'copy';
         });
     });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, setting up drag and drop');
+    setupDragAndDrop();
 });
     </script>
 </body>
