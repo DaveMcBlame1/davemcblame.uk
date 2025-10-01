@@ -1,3 +1,9 @@
+// Update these lines to use window variables:
+window.API_BASE = 'https://api.multigrounds.org:10065/api';
+window.currentUser = window.currentUser || null;
+window.currentPage = window.currentPage || null;
+window.currentSubdomain = window.currentSubdomain || null;
+
 const API_BASE = 'https://multigrounds.org:10065/api';  // Fixed URL
 let currentPage = null;
 let pageBlocks = [];

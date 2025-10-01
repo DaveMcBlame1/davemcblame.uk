@@ -183,15 +183,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="builder.js"></script>
     <script>
-let currentUser = null;
-let currentPage = null;
-let currentSubdomain = null;
+// Check if variables are already declared to avoid duplicates
+if (typeof currentUser === 'undefined') {
+    let currentUser = null;
+}
+if (typeof currentPage === 'undefined') {
+    let currentPage = null;
+}
+if (typeof currentSubdomain === 'undefined') {
+    let currentSubdomain = null;
+}
+
+// Use the API_BASE from builder.js or set a default
+const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Builder loaded, initializing...');
-    
-    // Use the API_BASE from builder.js - make sure it's set correctly there
-    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     // First check if user is logged in
     try {
@@ -229,8 +236,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadPageForEditing(subdomain) {
-    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
-    
     try {
         const response = await fetch(`${API_BASE}/page/${subdomain}`, {
             credentials: 'include'
@@ -294,8 +299,8 @@ function updatePageDisplay(page) {
     // Update page URL display
     const urlElement = document.getElementById('page-url');
     if (urlElement) {
-        urlElement.innerHTML = `<a href="https://api.multigrounds.org/pages/${page.subdomain}" target="_blank" class="text-decoration-none">
-            multigrounds.org/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
+        urlElement.innerHTML = `<a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none">
+            multigrounds.org/sites/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
         </a>`;
     }
 }
@@ -444,8 +449,6 @@ function showEmptyBuilder() {
 }
 
 function showPageSelector() {
-    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
-    
     fetch(`${API_BASE}/my-pages`, {
         credentials: 'include'
     })
@@ -576,8 +579,6 @@ async function savePage() {
         return;
     }
     
-    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
-    
     try {
         const blocks = collectBlocksFromCanvas();
         const title = document.getElementById('page-title').value || currentPage.title;
@@ -622,21 +623,10 @@ function collectBlocksFromCanvas() {
     return blocks;
 }
 
-// Initialize drag and drop for sidebar blocks
-document.addEventListener('DOMContentLoaded', () => {
-    const blockItems = document.querySelectorAll('.block-item');
-    blockItems.forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-            const blockType = e.target.closest('.block-item').dataset.blockType;
-            e.dataTransfer.setData('text/plain', blockType);
-        });
-    });
-});
-
 // Preview and publish functions
 function previewPage() {
     if (currentSubdomain) {
-        window.open(`https://api.multigrounds.org/pages/${currentSubdomain}`, '_blank');
+        window.open(`https://api.multigrounds.org/sites/${currentSubdomain}`, '_blank');
     } else {
         alert('Please save your page first');
     }
