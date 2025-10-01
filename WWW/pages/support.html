@@ -135,7 +135,8 @@
     <div class="top-links">
       <a href="/pages/policy">PRIVACY POLICY</a>
       <a href="/pages/terms">TERMS OF SERVICE</a>
-      <a href="/pages/billing">Purchase An Page</a>
+      <a href="/pages/billing">Purchase A Page</a>
+      <a href="/pages/signup">Sign Up</a>  <!-- Add this line -->
       <a href="/pages/support">Support</a>
       <a href="/pages/my-pages">My Pages</a>
     </div>
@@ -164,6 +165,13 @@
               </label>
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
+            
+            <!-- Add this section for sign up link -->
+            <div class="text-center mt-3">
+              <p class="mb-0">Don't have an account? 
+                <button type="button" id="show-register" class="btn btn-link p-0">Sign up here</button>
+              </p>
+            </div>
           </form>
         </div>
       </div>
@@ -344,9 +352,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupFormHandlers() {
     // Only set up handlers if the elements exist
     const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('register-form'); // Fixed ID
-    const logoutBtn = document.getElementById('logout-btn'); // Fixed ID
-    const ticketForm = document.getElementById('ticket-form'); // Fixed ID
+    const registerForm = document.getElementById('register-form');
+    const logoutBtn = document.getElementById('logout-btn');
+    const ticketForm = document.getElementById('ticket-form');
     
     // Login form handler
     if (loginForm) {
@@ -370,9 +378,14 @@ function setupFormHandlers() {
     
     // Navigation handlers - only if elements exist
     const showLoginBtn = document.getElementById('show-login');
+    const showRegisterBtn = document.getElementById('show-register');
     
     if (showLoginBtn) {
         showLoginBtn.addEventListener('click', showLoginSection);
+    }
+    
+    if (showRegisterBtn) {
+        showRegisterBtn.addEventListener('click', showRegisterSection);
     }
     
     console.log('Form handlers set up successfully');
