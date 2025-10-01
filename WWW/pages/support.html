@@ -312,57 +312,88 @@ const API_BASE = 'https://api.multigrounds.org:10065/api';
 let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Set up form handlers
-    setupFormHandlers();
-    
     console.log('Page loaded, checking login status...');
     
-    // Check if user is already logged in
+    // Set up form handlers first (with null checks)
+    setupFormHandlers();
+    
+    // Check if user is logged in
     try {
         const response = await fetch(`${API_BASE}/check-login`, {
             credentials: 'include'
         });
+        
+        console.log('Login check response:', await response.clone().json());
         const data = await response.json();
         
-        console.log('Login check response:', data);
-        
         if (data.success && data.logged_in) {
-            console.log('User already logged in:', data.user.username);
             currentUser = data.user;
+            console.log('User already logged in:', currentUser.username);
+            
+            // Update session flag for admin check
+            if (currentUser.is_admin) {
+                session['is_admin'] = true;
+            }
+            
             showTicketSection();
         } else {
-            console.log('User not logged in, showing auth forms');
-            showAuthForms();
+            console.log('User not logged in, showing login form');
+            showLoginSection();
         }
     } catch (error) {
         console.error('Error checking login status:', error);
-        showAuthForms();
+        showLoginSection();
     }
 });
 
 function setupFormHandlers() {
-    // Login form
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    // Only set up handlers if the elements exist
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const createTicketForm = document.getElementById('createTicketForm');
     
-    // Register form  
-    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    // Login form handler
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
     
-    // Ticket form
-    document.getElementById('ticket-form').addEventListener('submit', handleTicketSubmit);
+    // Register form handler  
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
     
-    // Show/hide form buttons
-    document.getElementById('show-register').addEventListener('click', () => {
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('register-section').style.display = 'block';
-    });
+    // Logout button handler
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
     
-    document.getElementById('show-login').addEventListener('click', () => {
-        document.getElementById('register-section').style.display = 'none';
-        document.getElementById('login-section').style.display = 'block';
-    });
+    // Create ticket form handler
+    if (createTicketForm) {
+        createTicketForm.addEventListener('submit', handleCreateTicket);
+    }
     
-    // Logout button
-    document.getElementById('logout-btn').addEventListener('click', logout);
+    // Navigation handlers - only if elements exist
+    const showRegisterBtn = document.getElementById('showRegister');
+    const showLoginBtn = document.getElementById('showLogin');
+    const showCreateTicketBtn = document.getElementById('showCreateTicket');
+    
+    if (showRegisterBtn) {
+        showRegisterBtn.addEventListener('click', showRegisterSection);
+    }
+    
+    if (showLoginBtn) {
+        showLoginBtn.addEventListener('click', showLoginSection);
+    }
+    
+    if (showCreateTicketBtn) {
+        showCreateTicketBtn.addEventListener('click', () => {
+            const modal = new bootstrap.Modal(document.getElementById('createTicketModal'));
+            modal.show();
+        });
+    }
+    
+    console.log('Form handlers set up successfully');
 }
 
 function showAuthForms() {
@@ -372,21 +403,33 @@ function showAuthForms() {
 }
 
 function showTicketSection() {
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('register-section').style.display = 'none';
-    document.getElementById('ticket-section').style.display = 'block';
+    // Hide login/register sections
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+    const ticketSection = document.getElementById('ticket-section');
+    
+    if (loginSection) loginSection.style.display = 'none';
+    if (registerSection) registerSection.style.display = 'none';
+    if (ticketSection) ticketSection.style.display = 'block';
     
     // Show admin sections if user is admin
     if (currentUser && currentUser.is_admin) {
-        document.getElementById('admin-badge').style.display = 'inline';
-        document.getElementById('admin-tickets').style.display = 'block';
-        document.getElementById('user-tickets').style.display = 'none';
+        const adminBadge = document.getElementById('admin-badge');
+        const adminTickets = document.getElementById('admin-tickets');
+        const userTickets = document.getElementById('user-tickets');
+        
+        if (adminBadge) adminBadge.style.display = 'inline';
+        if (adminTickets) adminTickets.style.display = 'block';
+        if (userTickets) userTickets.style.display = 'none';
         
         // Add bulk actions after a brief delay to ensure DOM is ready
         setTimeout(addBulkActionsSection, 100);
     } else {
-        document.getElementById('admin-tickets').style.display = 'none';
-        document.getElementById('user-tickets').style.display = 'block';
+        const adminTickets = document.getElementById('admin-tickets');
+        const userTickets = document.getElementById('user-tickets');
+        
+        if (adminTickets) adminTickets.style.display = 'none';
+        if (userTickets) userTickets.style.display = 'block';
     }
     
     loadTickets();
@@ -853,10 +896,14 @@ function addBulkActionsSection() {
     if (!currentUser?.is_admin) return;
     
     const adminTicketsDiv = document.getElementById('admin-tickets');
+    if (!adminTicketsDiv) return;
+    
+    // Check if bulk actions already exist
+    if (adminTicketsDiv.querySelector('.bulk-actions')) return;
     
     // Add bulk actions toolbar before the tickets
     const bulkActionsHTML = `
-        <div class="card mb-3">
+        <div class="card mb-3 bulk-actions">
             <div class="card-body">
                 <h6>Bulk Actions</h6>
                 <div class="d-flex gap-2 flex-wrap">
