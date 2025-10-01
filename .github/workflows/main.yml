@@ -19,6 +19,7 @@ jobs:
           uploads: |
             ./WWW => ./www/
           ignore: |
+            ./sites/
             sites/
             **/sites/**
           delete: true
