@@ -505,11 +505,16 @@ async function proceedToPayment() {
         return;
     }
     
-    // Show loading state
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-    btn.disabled = true;
+    // Show loading state - find the button properly
+    const btn = document.querySelector('#planModal .btn-success') || 
+               document.querySelector('[onclick="proceedToPayment()"]');
+    
+    let originalText = 'Proceed to Payment';
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        btn.disabled = true;
+    }
     
     // Create the purchase
     try {
@@ -532,7 +537,9 @@ async function proceedToPayment() {
             
             // Close modal and redirect
             const modal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
-            modal.hide();
+            if (modal) {
+                modal.hide();
+            }
             
             // Give user choice
             const goToBuilder = confirm('Would you like to start building your page now?\n\nClick OK to go to Page Builder\nClick Cancel to stay here');
@@ -550,8 +557,10 @@ async function proceedToPayment() {
         alert('Error processing purchase. Please try again.');
     } finally {
         // Restore button state
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 }
 
