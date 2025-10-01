@@ -50,12 +50,12 @@
         <div class="row g-4">
           <!-- Solo Plan -->
           <div class="col-lg-3 col-md-6">
-            <div class="card plan-card h-100">
+            <div class="card plan-card h-100" data-plan="solo">
               <div class="card-body text-center">
                 <h4>Solo</h4>
                 <div class="price-breakdown">
-                  <div class="h5 text-primary mb-1">$8 <small class="text-muted">setup</small></div>
-                  <div class="h5 text-success">$4<small class="text-muted">/month</small></div>
+                  <div class="h5 text-primary mb-1">$10 <small class="text-muted">setup</small></div>
+                  <div class="h5 text-success">$5<small class="text-muted">/month</small></div>
                 </div>
                 <p class="text-muted">Perfect for a single-page portfolio</p>
                 <ul class="list-unstyled text-start">
@@ -65,7 +65,7 @@
                   <li>✅ SSL certificate</li>
                   <li>✅ Basic support</li>
                 </ul>
-                <button class="btn btn-outline-primary btn-lg w-100" onclick="selectPlan('solo', 8, 4)">
+                <button class="btn btn-outline-primary btn-lg w-100" onclick="selectPlan('solo', 10, 5)">
                   Choose Solo
                 </button>
               </div>
@@ -74,7 +74,7 @@
           
           <!-- Starter Plan -->
           <div class="col-lg-3 col-md-6">
-            <div class="card plan-card h-100">
+            <div class="card plan-card h-100" data-plan="starter">
               <div class="card-body text-center">
                 <h4>Starter</h4>
                 <div class="price-breakdown">
@@ -98,7 +98,7 @@
           
           <!-- Expansive Plan -->
           <div class="col-lg-3 col-md-6">
-            <div class="card plan-card h-100 border-warning position-relative">
+            <div class="card plan-card h-100 border-warning position-relative" data-plan="expansive">
               <span class="badge bg-warning popular-badge">Popular</span>
               <div class="card-body text-center">
                 <h4>Expansive</h4>
@@ -123,7 +123,7 @@
           
           <!-- Business Plan -->
           <div class="col-lg-3 col-md-6">
-            <div class="card plan-card h-100 border-dark">
+            <div class="card plan-card h-100 border-dark" data-plan="business">
               <div class="card-body text-center">
                 <h4>Business</h4>
                 <div class="price-breakdown">
@@ -268,8 +268,8 @@
           <div class="text-center mb-4">
             <h4 id="selected-plan-name">Solo Plan</h4>
             <div class="price-breakdown">
-              <div class="h5 text-primary">Setup: $<span id="setup-cost">8</span></div>
-              <div class="h5 text-success">Monthly: $<span id="monthly-cost">4</span></div>
+              <div class="h5 text-primary">Setup: $<span id="setup-cost">10</span></div>
+              <div class="h5 text-success">Monthly: $<span id="monthly-cost">5</span></div>
             </div>
           </div>
           
@@ -318,11 +318,34 @@
   <script>
 const API_BASE = 'https://multigrounds.org:10065/api';
 let currentUser = null;
+let selectedPlan = null;
+
+// Plan data
+const plans = {
+    solo: {
+        name: 'solo',
+        setupCost: 10,
+        monthlyCost: 5,
+        features: ['1 Page', 'Basic Support', 'SSL Certificate']
+    },
+    business: {
+        name: 'business', 
+        setupCost: 25,
+        monthlyCost: 15,
+        features: ['5 Pages', 'Priority Support', 'Custom Domain', 'Analytics']
+    },
+    enterprise: {
+        name: 'enterprise',
+        setupCost: 50,
+        monthlyCost: 30,
+        features: ['Unlimited Pages', '24/7 Support', 'Custom Features', 'API Access']
+    }
+};
 
 // Check login status when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     await checkLoginStatus();
-    // Your existing DOMContentLoaded code...
+    setupPlanSelection();
 });
 
 async function checkLoginStatus() {
@@ -390,29 +413,48 @@ function showLoggedOutState() {
     }
 }
 
-async function logout() {
-    try {
-        const response = await fetch(`${API_BASE}/logout`, {
-            method: 'POST',
-            credentials: 'include'
+function setupPlanSelection() {
+    // Add click handlers to plan cards
+    document.querySelectorAll('.plan-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const planName = this.dataset.plan;
+            selectPlan(planName);
         });
-        
-        if (response.ok) {
-            currentUser = null;
-            document.getElementById('user-info')?.remove();
-            showLoggedOutState();
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
+    });
 }
 
-// Update your existing proceedToPayment function to check login
+function selectPlan(planName) {
+    selectedPlan = plans[planName];
+    
+    // Update UI to show selected plan
+    document.querySelectorAll('.plan-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    const selectedCard = document.querySelector(`[data-plan="${planName}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+    }
+    
+    // Show the form
+    document.getElementById('page-creation-form').style.display = 'block';
+    
+    // Update plan details in form
+    document.getElementById('selected-plan-name').textContent = selectedPlan.name.toUpperCase();
+    document.getElementById('setup-cost').textContent = `$${selectedPlan.setupCost}`;
+    document.getElementById('monthly-cost').textContent = `$${selectedPlan.monthlyCost}`;
+}
+
 async function proceedToPayment() {
     // Check if user is logged in first
     if (!currentUser) {
         alert('Please log in first before creating a page.');
         window.location.href = '/pages/support';
+        return;
+    }
+    
+    if (!selectedPlan) {
+        alert('Please select a plan first.');
         return;
     }
     
@@ -479,110 +521,22 @@ async function proceedToPayment() {
     }
 }
 
-    const API_BASE = 'https://api.multigrounds.org:10065/api';
-    let selectedPlan = null;
-
-    async function selectPlan(planName, setupCost, monthlyCost) {
-      selectedPlan = {
-        name: planName,
-        setupCost: setupCost,
-        monthlyCost: monthlyCost
-      };
-      
-      // Update modal content
-      document.getElementById('selected-plan-name').textContent = planName.charAt(0).toUpperCase() + planName.slice(1) + ' Plan';
-      document.getElementById('setup-cost').textContent = setupCost;
-      document.getElementById('monthly-cost').textContent = monthlyCost;
-      
-      // Check if user is logged in
-      try {
-        const response = await fetch(`${API_BASE}/my-page`, {
-          credentials: 'include'
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
         });
         
-        if (response.status === 401) {
-          // Not logged in
-          document.getElementById('login-required').style.display = 'block';
-          document.getElementById('purchase-form').style.display = 'none';
-        } else {
-          // Logged in
-          document.getElementById('login-required').style.display = 'none';
-          document.getElementById('purchase-form').style.display = 'block';
+        if (response.ok) {
+            currentUser = null;
+            document.getElementById('user-info')?.remove();
+            showLoggedOutState();
         }
-      } catch (error) {
-        // Assume not logged in
-        document.getElementById('login-required').style.display = 'block';
-        document.getElementById('purchase-form').style.display = 'none';
-      }
-      
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('planModal'));
-      modal.show();
+    } catch (error) {
+        console.error('Logout error:', error);
     }
-
-    async function proceedToPayment() {
-      const subdomain = document.getElementById('subdomain-input').value.trim();
-      const termsChecked = document.getElementById('terms-check').checked;
-      
-      if (!subdomain) {
-        alert('Please enter a subdomain');
-        return;
-      }
-      
-      if (!termsChecked) {
-        alert('Please accept the Terms of Service');
-        return;
-      }
-      
-      // Validate subdomain format
-      if (!/^[a-z0-9-]+$/.test(subdomain) || subdomain.length < 3) {
-        alert('Subdomain must be at least 3 characters and contain only letters, numbers, and hyphens');
-        return;
-      }
-      
-      // Check if subdomain is available first
-      try {
-        const checkResponse = await fetch(`${API_BASE}/check-subdomain/${subdomain}`, {
-          credentials: 'include'
-        });
-        const checkData = await checkResponse.json();
-        
-        if (!checkData.available) {
-          alert('This subdomain is already taken. Please choose another one.');
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking subdomain:', error);
-        alert('Error checking subdomain availability. Please try again.');
-        return;
-      }
-      
-      // For now, create a placeholder purchase record instead of actual page
-      try {
-        const response = await fetch(`${API_BASE}/create-purchase`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            subdomain: subdomain,
-            plan: selectedPlan.name,
-            setupCost: selectedPlan.setupCost,
-            monthlyCost: selectedPlan.monthlyCost
-          })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          alert(`Purchase initiated! Payment integration coming soon. For now, your page "${subdomain}" has been created.`);
-          window.location.href = '/pages/builder.html';
-        } else {
-          alert('Error: ' + data.message);
-        }
-      } catch (error) {
-        console.error('Purchase error:', error);
-        alert('Error processing purchase. Please try again.');
-      }
-    }
+}
   </script>
   
   <footer class="footer">
