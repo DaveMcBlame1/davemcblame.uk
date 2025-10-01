@@ -1,13 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- <link rel="preload" href="css/default.css" as="style" onload="this.onload=null;this.rel='stylesheet'"> -->
   <link rel="stylesheet" href="scss/bootstrap.min.css">
   <link rel="stylesheet" href="css/bsdefault.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="logo" href="Multigrounds.png" />
-  <title>Home</title>
+  <title>Multigrounds - Create Your Professional Web Presence</title>
+  <style>
+    .hero-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 100px 0;
+      text-align: center;
+    }
+    
+    .feature-card {
+      transition: transform 0.3s ease;
+      height: 100%;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stats-section {
+      background: #f8f9fa;
+      padding: 60px 0;
+    }
+    
+    .cta-section {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 80px 0;
+      text-align: center;
+    }
+    
+    .logo-hero {
+      max-width: 150px;
+      margin-bottom: 30px;
+    }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -15,30 +49,319 @@
     <div class="top-links">
       <a href="pages/policy">PRIVACY POLICY</a>
       <a href="pages/terms">TERMS OF SERVICE</a>
-      <a href="pages/billing">Purchase An Page</a>
+      <a href="pages/billing">Get Started</a>
       <a href="pages/support">Support</a>
+      <a href="pages/my-pages">My Pages</a>
     </div>
   </header>
-    
 
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <img src="Multigrounds.png" alt="Multigrounds Logo" class="logo-hero">
+          <h1 class="display-4 fw-bold mb-4">Build Your Professional Web Presence</h1>
+          <p class="lead mb-5">Create stunning portfolios, business pages, and personal websites with our intuitive drag-and-drop builder. No coding required!</p>
+          
+          <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="pages/billing" class="btn btn-light btn-lg px-4">
+              <i class="fas fa-rocket"></i> Get Started
+            </a>
+            <button id="my-pages-btn" class="btn btn-outline-light btn-lg px-4" onclick="goToMyPages()">
+              <i class="fas fa-list"></i> My Pages
+            </button>
+            <a href="pages/support" class="btn btn-outline-light btn-lg px-4">
+              <i class="fas fa-life-ring"></i> Support
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row text-center mb-5">
+        <div class="col-lg-8 mx-auto">
+          <h2 class="display-5 fw-bold mb-3">Why Choose Multigrounds?</h2>
+          <p class="lead text-muted">Everything you need to create a professional online presence</p>
+        </div>
+      </div>
+      
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-primary mb-3">
+                <i class="fas fa-magic fa-3x"></i>
+              </div>
+              <h5>Drag & Drop Builder</h5>
+              <p class="text-muted">Build professional websites with our intuitive visual editor. No coding skills required!</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-success mb-3">
+                <i class="fas fa-mobile-alt fa-3x"></i>
+              </div>
+              <h5>Mobile Responsive</h5>
+              <p class="text-muted">Your pages look perfect on all devices - desktop, tablet, and mobile.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-warning mb-3">
+                <i class="fas fa-bolt fa-3x"></i>
+              </div>
+              <h5>Lightning Fast</h5>
+              <p class="text-muted">Your pages load instantly with our optimized hosting infrastructure.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-info mb-3">
+                <i class="fas fa-shield-alt fa-3x"></i>
+              </div>
+              <h5>Secure & Reliable</h5>
+              <p class="text-muted">SSL certificates included. Your data and your visitors are always protected.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-danger mb-3">
+                <i class="fas fa-headset fa-3x"></i>
+              </div>
+              <h5>24/7 Support</h5>
+              <p class="text-muted">Our support team is always here to help you succeed with your projects.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="card feature-card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="text-purple mb-3">
+                <i class="fas fa-palette fa-3x"></i>
+              </div>
+              <h5>Custom Styling</h5>
+              <p class="text-muted">Full control over your design with custom CSS and advanced styling options.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-md-3 col-6 mb-4">
+          <div class="h2 fw-bold text-primary">1000+</div>
+          <p class="text-muted mb-0">Pages Created</p>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+          <div class="h2 fw-bold text-success">500+</div>
+          <p class="text-muted mb-0">Happy Users</p>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+          <div class="h2 fw-bold text-warning">99.9%</div>
+          <p class="text-muted mb-0">Uptime</p>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+          <div class="h2 fw-bold text-info">24/7</div>
+          <p class="text-muted mb-0">Support</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Preview -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row text-center mb-5">
+        <div class="col-lg-8 mx-auto">
+          <h2 class="display-5 fw-bold mb-3">Simple, Transparent Pricing</h2>
+          <p class="lead text-muted">Start small and scale as you grow</p>
+        </div>
+      </div>
+      
+      <div class="row justify-content-center g-4">
+        <div class="col-lg-3 col-md-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <h5 class="mb-3">Solo</h5>
+              <div class="h3 text-primary mb-3">$10 <small class="text-muted">setup</small></div>
+              <div class="h5 text-success mb-3">$5<small class="text-muted">/month</small></div>
+              <p class="text-muted">Perfect for personal portfolios</p>
+              <ul class="list-unstyled text-start">
+                <li>✅ 1 Page</li>
+                <li>✅ Drag & Drop Builder</li>
+                <li>✅ Mobile Responsive</li>
+                <li>✅ SSL Certificate</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+          <div class="card border-warning shadow-sm">
+            <div class="card-header bg-warning text-center">
+              <small class="fw-bold">POPULAR</small>
+            </div>
+            <div class="card-body text-center p-4">
+              <h5 class="mb-3">Expansive</h5>
+              <div class="h3 text-primary mb-3">$32 <small class="text-muted">setup</small></div>
+              <div class="h5 text-success mb-3">$16<small class="text-muted">/month</small></div>
+              <p class="text-muted">For bigger portfolios</p>
+              <ul class="list-unstyled text-start">
+                <li>✅ 8 Pages</li>
+                <li>✅ Advanced Blocks</li>
+                <li>✅ SEO Optimization</li>
+                <li>✅ Contact Forms</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <h5 class="mb-3">Business</h5>
+              <div class="h3 text-primary mb-3">$64 <small class="text-muted">setup</small></div>
+              <div class="h5 text-success mb-3">$32<small class="text-muted">/month</small></div>
+              <p class="text-muted">Full hosting support</p>
+              <ul class="list-unstyled text-start">
+                <li>✅ 15 Pages</li>
+                <li>✅ White-label Branding</li>
+                <li>✅ Custom Domain</li>
+                <li>✅ Priority Support</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-center mt-4">
+        <a href="pages/billing" class="btn btn-primary btn-lg">View All Plans</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h2 class="display-5 fw-bold mb-4">Ready to Get Started?</h2>
+          <p class="lead mb-5">Join thousands of creators who trust Multigrounds for their web presence</p>
+          
+          <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="pages/billing" class="btn btn-light btn-lg px-5">
+              <i class="fas fa-rocket"></i> Start Building Now
+            </a>
+            <a href="pages/support" class="btn btn-outline-light btn-lg px-5">
+              <i class="fas fa-question-circle"></i> Have Questions?
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
-    <script>
-    async function loadVersion() {
-      const vars = await fetch("globaldata.json")
-        .then(r => r.json())
-        .catch(e => console.error("Error fetching file", e));
+  </footer>
 
-      let versionElements = document.querySelectorAll(".version");
-      for (const versionElement of versionElements) {
-        versionElement.innerText = vars.version ?? "Not found";
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_BASE = 'https://api.multigrounds.org:10065/api';
+    
+    // Check if user is logged in when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkLoginStatus();
+      loadVersion();
+    });
+    
+    async function checkLoginStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/check-login`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        const myPagesBtn = document.getElementById('my-pages-btn');
+        
+        if (data.success && data.logged_in) {
+          // User is logged in - enable My Pages button
+          myPagesBtn.innerHTML = '<i class="fas fa-list"></i> My Pages';
+          myPagesBtn.disabled = false;
+          myPagesBtn.classList.remove('btn-outline-light');
+          myPagesBtn.classList.add('btn-warning');
+          myPagesBtn.title = 'View and edit your pages';
+        } else {
+          // User not logged in - show login prompt
+          myPagesBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login First';
+          myPagesBtn.disabled = false;
+          myPagesBtn.classList.remove('btn-warning');
+          myPagesBtn.classList.add('btn-outline-light');
+          myPagesBtn.title = 'Login to access your pages';
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+        // Keep default state on error
+      }
+    }
+    
+    async function goToMyPages() {
+      try {
+        // Check login status first
+        const response = await fetch(`${API_BASE}/check-login`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && data.logged_in) {
+          // User is logged in - go to my pages
+          window.location.href = '/pages/my-pages';
+        } else {
+          // User not logged in - redirect to support/login
+          alert('Please log in first to access your pages.');
+          window.location.href = '/pages/support';
+        }
+      } catch (error) {
+        console.error('Error checking login:', error);
+        alert('Please log in first to access your pages.');
+        window.location.href = '/pages/support';
       }
     }
 
-    loadVersion();
-    </script>
-  </footer>
+    async function loadVersion() {
+      try {
+        const vars = await fetch("globaldata.json").then(r => r.json());
+        let versionElements = document.querySelectorAll(".version");
+        for (const versionElement of versionElements) {
+          versionElement.innerText = vars.version ?? "Not found";
+        }
+      } catch (e) {
+        console.error("Error fetching version", e);
+      }
+    }
+  </script>
 </body>
 </html>

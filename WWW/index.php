@@ -82,6 +82,12 @@ switch ($request) {
         require __DIR__ . '/pages/builder.html';
         break;
     
+    case '/pages/my-pages':
+        // This requires authentication - serve the my-pages.html file
+        // The authentication check is handled by JavaScript in the HTML file
+        require __DIR__ . '/pages/my-pages.html';
+        break;
+    
     case '/pages/verify':
         require __DIR__ . '/pages/verify.html';
         break;
