@@ -183,13 +183,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="builder.js"></script>
     <script>
-const API_BASE = 'https://api.multigrounds.org:10065/api';
 let currentUser = null;
 let currentPage = null;
 let currentSubdomain = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Builder loaded, initializing...');
+    
+    // Use the API_BASE from builder.js - make sure it's set correctly there
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     // First check if user is logged in
     try {
@@ -227,6 +229,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadPageForEditing(subdomain) {
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    
     try {
         const response = await fetch(`${API_BASE}/page/${subdomain}`, {
             credentials: 'include'
@@ -252,17 +256,12 @@ async function loadPageForEditing(subdomain) {
             if (data.page.page_data) {
                 const pageData = JSON.parse(data.page.page_data);
                 if (pageData.blocks && pageData.blocks.length > 0) {
-                    loadBlocksIntoBuilder(pageData.blocks);
+                    loadBlocksIntoCanvas(pageData.blocks);
                 } else {
                     showEmptyBuilder();
                 }
             } else {
                 showEmptyBuilder();
-            }
-            
-            // Load custom CSS if it exists
-            if (data.page.custom_css) {
-                loadCustomCSS(data.page.custom_css);
             }
             
         } else {
@@ -278,143 +277,109 @@ async function loadPageForEditing(subdomain) {
 }
 
 function updatePageDisplay(page) {
-    // Update page title in the builder
-    const titleElement = document.getElementById('page-title') || 
-                        document.querySelector('.page-title') ||
-                        document.querySelector('h1');
-    
-    if (titleElement) {
-        if (titleElement.tagName === 'INPUT' || titleElement.tagName === 'TEXTAREA') {
-            titleElement.value = page.title;
-        } else {
-            titleElement.textContent = `Editing: ${page.title}`;
-        }
+    // Update page title
+    const titleInput = document.getElementById('page-title');
+    if (titleInput) {
+        titleInput.value = page.title;
     }
     
-    // Update subdomain display
-    const subdomainElement = document.getElementById('page-subdomain') || 
-                            document.querySelector('.page-subdomain') ||
-                            document.querySelector('input[placeholder*="yourname"]');
-    
-    if (subdomainElement) {
-        subdomainElement.value = page.subdomain;
-        subdomainElement.placeholder = page.subdomain;
-        subdomainElement.disabled = true; // Can't change subdomain after creation
+    // Update subdomain display (disable editing after creation)
+    const subdomainInput = document.getElementById('page-subdomain');
+    if (subdomainInput) {
+        subdomainInput.value = page.subdomain;
+        subdomainInput.disabled = true;
+        subdomainInput.style.backgroundColor = '#e9ecef';
     }
     
-    // Show page URL
-    const urlElement = document.getElementById('page-url') || 
-                      document.querySelector('.page-url');
-    
+    // Update page URL display
+    const urlElement = document.getElementById('page-url');
     if (urlElement) {
-        urlElement.innerHTML = `<a href="https://api.multigrounds.org/pages/${page.subdomain}" target="_blank">
-            View Page: https://api.multigrounds.org/pages/${page.subdomain}
+        urlElement.innerHTML = `<a href="https://api.multigrounds.org/pages/${page.subdomain}" target="_blank" class="text-decoration-none">
+            multigrounds.org/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
         </a>`;
     }
+}
+
+function loadBlocksIntoCanvas(blocks) {
+    console.log('Loading blocks into canvas:', blocks);
     
-    // Add page info if no specific elements found
-    if (!titleElement && !subdomainElement) {
-        const builderHeader = document.querySelector('.builder-header') || 
-                             document.querySelector('header') ||
-                             document.body.firstElementChild;
+    const canvas = document.getElementById('canvas');
+    if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
+    
+    // Clear existing content
+    canvas.innerHTML = '';
+    
+    // Add each block to the canvas
+    blocks.forEach((block, index) => {
+        const blockElement = createCanvasBlock(block, index);
+        canvas.appendChild(blockElement);
         
-        if (builderHeader) {
-            const pageInfo = document.createElement('div');
-            pageInfo.className = 'page-info alert alert-info';
-            pageInfo.innerHTML = `
-                <h4>Editing: ${page.title}</h4>
-                <p><strong>Subdomain:</strong> ${page.subdomain}</p>
-                <p><strong>Page URL:</strong> <a href="https://api.multigrounds.org/pages/${page.subdomain}" target="_blank">
-                    https://api.multigrounds.org/pages/${page.subdomain}
-                </a></p>
-            `;
-            builderHeader.appendChild(pageInfo);
-        }
+        // Add drop zone after each block
+        const dropZone = createDropZone();
+        canvas.appendChild(dropZone);
+    });
+    
+    // Always end with a drop zone
+    if (blocks.length === 0) {
+        const dropZone = createDropZone();
+        dropZone.innerHTML = '<span class="text-muted">Drag blocks here to start building your page</span>';
+        canvas.appendChild(dropZone);
     }
 }
 
-function loadBlocksIntoBuilder(blocks) {
-    console.log('Loading blocks into builder:', blocks);
-    
-    // This depends on your specific builder implementation
-    // Try different common methods to load blocks
-    
-    if (window.loadBlocks && typeof window.loadBlocks === 'function') {
-        window.loadBlocks(blocks);
-    } else if (window.pageBuilder && window.pageBuilder.loadBlocks) {
-        window.pageBuilder.loadBlocks(blocks);
-    } else if (window.builder && window.builder.loadBlocks) {
-        window.builder.loadBlocks(blocks);
-    } else {
-        // Generic block loading - adapt this to your builder
-        const builderContainer = document.getElementById('builder-container') || 
-                                document.querySelector('.builder-content') ||
-                                document.querySelector('.page-builder');
-        
-        if (builderContainer) {
-            // Clear existing content
-            builderContainer.innerHTML = '';
-            
-            // Add each block
-            blocks.forEach((block, index) => {
-                const blockElement = createBlockElement(block, index);
-                builderContainer.appendChild(blockElement);
-            });
-        }
-    }
-}
-
-function createBlockElement(block, index) {
+function createCanvasBlock(block, index) {
     const blockDiv = document.createElement('div');
-    blockDiv.className = `builder-block block-${block.type}`;
+    blockDiv.className = 'editable-block mb-3 p-3';
     blockDiv.dataset.blockIndex = index;
     blockDiv.dataset.blockType = block.type;
     
     const content = block.content || {};
     
+    // Add block controls
+    const controls = document.createElement('div');
+    controls.className = 'block-controls';
+    controls.innerHTML = `
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-primary btn-sm" onclick="editBlock(${index})" title="Edit">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteBlock(${index})" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    blockDiv.appendChild(controls);
+    
+    // Add block content based on type
+    const contentDiv = document.createElement('div');
+    
     switch (block.type) {
         case 'header':
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Header ${content.level || 1}</span>
-                    <button onclick="editBlock(${index})" class="btn btn-sm btn-primary">Edit</button>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
-                <h${content.level || 1} class="text-${content.align || 'left'}">${content.text || 'Header'}</h${content.level || 1}>
-            `;
+            contentDiv.innerHTML = `<h${content.level || 1} class="text-${content.align || 'left'} mb-0">${content.text || 'Header'}</h${content.level || 1}>`;
             break;
             
         case 'text':
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Text</span>
-                    <button onclick="editBlock(${index})" class="btn btn-sm btn-primary">Edit</button>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
-                <p class="text-${content.align || 'left'}">${content.text || 'Text content'}</p>
-            `;
+            contentDiv.innerHTML = `<p class="text-${content.align || 'left'} mb-0">${content.text || 'Text content'}</p>`;
             break;
             
         case 'image':
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Image</span>
-                    <button onclick="editBlock(${index})" class="btn btn-sm btn-primary">Edit</button>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
-                <div class="text-${content.align || 'center'}">
-                    <img src="${content.src || ''}" alt="${content.alt || ''}" class="img-fluid" style="max-width: ${content.maxWidth || '100%'}">
-                </div>
-            `;
+            if (content.src) {
+                contentDiv.innerHTML = `
+                    <div class="text-${content.align || 'center'}">
+                        <img src="${content.src}" alt="${content.alt || ''}" class="img-fluid" style="max-width: ${content.maxWidth || '100%'}">
+                    </div>
+                `;
+            } else {
+                contentDiv.innerHTML = `<div class="text-center p-4 bg-light border">No image selected</div>`;
+            }
             break;
             
         case 'button':
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Button</span>
-                    <button onclick="editBlock(${index})" class="btn btn-sm btn-primary">Edit</button>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
+            contentDiv.innerHTML = `
                 <div class="text-${content.align || 'center'}">
                     <a href="${content.link || '#'}" class="btn btn-${content.style || 'primary'}">${content.text || 'Button'}</a>
                 </div>
@@ -422,68 +387,64 @@ function createBlockElement(block, index) {
             break;
             
         case 'spacer':
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Spacer</span>
-                    <button onclick="editBlock(${index})" class="btn btn-sm btn-primary">Edit</button>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
-                <div style="height: ${content.height || '50px'}; background: #f0f0f0; border: 1px dashed #ccc;"></div>
-            `;
+            contentDiv.innerHTML = `<div style="height: ${content.height || '50px'};" class="bg-light border"></div>`;
             break;
             
         default:
-            blockDiv.innerHTML = `
-                <div class="block-controls">
-                    <span class="block-type">Unknown Block</span>
-                    <button onclick="deleteBlock(${index})" class="btn btn-sm btn-danger">Delete</button>
-                </div>
-                <p>Unknown block type: ${block.type}</p>
-            `;
+            contentDiv.innerHTML = `<p class="text-muted">Unknown block type: ${block.type}</p>`;
     }
     
+    blockDiv.appendChild(contentDiv);
     return blockDiv;
 }
 
-function loadCustomCSS(css) {
-    const cssTextarea = document.getElementById('custom-css') || 
-                       document.querySelector('textarea[placeholder*="css"]') ||
-                       document.querySelector('.css-editor');
+function createDropZone() {
+    const dropZone = document.createElement('div');
+    dropZone.className = 'drop-zone';
+    dropZone.innerHTML = '<span class="text-muted">Drop block here</span>';
     
-    if (cssTextarea) {
-        cssTextarea.value = css;
-    }
+    // Add drop zone event listeners
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('drop', handleDrop);
+    dropZone.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', (e) => {
+        if (!dropZone.contains(e.relatedTarget)) {
+            dropZone.classList.remove('drag-over');
+        }
+    });
     
-    // Apply CSS to preview if available
-    let styleElement = document.getElementById('custom-style-preview');
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = 'custom-style-preview';
-        document.head.appendChild(styleElement);
-    }
-    styleElement.textContent = css;
+    return dropZone;
 }
 
 function showEmptyBuilder() {
-    console.log('Showing empty builder for new page');
-    
-    const builderContainer = document.getElementById('builder-container') || 
-                            document.querySelector('.builder-content') ||
-                            document.querySelector('.page-builder');
-    
-    if (builderContainer) {
-        builderContainer.innerHTML = `
-            <div class="empty-builder text-center py-5">
-                <h3>Start Building Your Page!</h3>
-                <p>Add blocks using the toolbar above to create your page.</p>
+    const canvas = document.getElementById('canvas');
+    if (canvas) {
+        canvas.innerHTML = `
+            <div class="drop-zone">
+                <span class="text-muted">Drag blocks here to start building your page</span>
             </div>
         `;
+        
+        const dropZone = canvas.querySelector('.drop-zone');
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', handleDrop);
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            if (!dropZone.contains(e.relatedTarget)) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
     }
 }
 
 function showPageSelector() {
-    // Show a page selector or redirect to billing if no pages exist
-    console.log('No page specified, checking user pages...');
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     fetch(`${API_BASE}/my-pages`, {
         credentials: 'include'
@@ -491,10 +452,8 @@ function showPageSelector() {
     .then(response => response.json())
     .then(data => {
         if (data.success && data.pages.length > 0) {
-            // Show page selector
             showPageSelectorModal(data.pages);
         } else {
-            // Redirect to billing to create a page
             alert('You need to create a page first before using the builder.');
             window.location.href = '/pages/billing';
         }
@@ -507,7 +466,6 @@ function showPageSelector() {
 }
 
 function showPageSelectorModal(pages) {
-    // Create a modal to select which page to edit
     const modal = document.createElement('div');
     modal.className = 'modal fade';
     modal.innerHTML = `
@@ -535,24 +493,94 @@ function showPageSelectorModal(pages) {
     `;
     
     document.body.appendChild(modal);
-    
-    // Show the modal using Bootstrap
     const bsModal = new bootstrap.Modal(modal);
     bsModal.show();
 }
 
-// Save function - implement this based on your builder
+// Drag and Drop functionality
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const blockType = e.dataTransfer.getData('text/plain');
+    if (blockType) {
+        addBlockToCanvas(blockType, e.currentTarget);
+    }
+}
+
+function addBlockToCanvas(blockType, dropZone) {
+    const newBlock = createDefaultBlock(blockType);
+    const blockElement = createCanvasBlock(newBlock, Date.now()); // Use timestamp as temp index
+    
+    // Replace drop zone with block + new drop zone
+    const newDropZone = createDropZone();
+    dropZone.parentNode.insertBefore(blockElement, dropZone);
+    dropZone.parentNode.insertBefore(newDropZone, dropZone.nextSibling);
+}
+
+function createDefaultBlock(blockType) {
+    const defaults = {
+        header: {
+            type: 'header',
+            content: {
+                text: 'New Header',
+                level: 1,
+                align: 'left'
+            }
+        },
+        text: {
+            type: 'text',
+            content: {
+                text: 'This is a text block. Click edit to change this content.',
+                align: 'left'
+            }
+        },
+        image: {
+            type: 'image',
+            content: {
+                src: '',
+                alt: 'Image',
+                align: 'center',
+                maxWidth: '100%'
+            }
+        },
+        button: {
+            type: 'button',
+            content: {
+                text: 'Click Me',
+                link: '#',
+                style: 'primary',
+                align: 'center'
+            }
+        },
+        spacer: {
+            type: 'spacer',
+            content: {
+                height: '50px'
+            }
+        }
+    };
+    
+    return defaults[blockType] || defaults.text;
+}
+
+// Save functionality
 async function savePage() {
     if (!currentSubdomain) {
         alert('No page loaded to save');
         return;
     }
     
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    
     try {
-        // Collect blocks from builder - adapt this to your implementation
-        const blocks = collectBlocksFromBuilder();
-        const customCSS = getCustomCSS();
-        const title = getPageTitle();
+        const blocks = collectBlocksFromCanvas();
+        const title = document.getElementById('page-title').value || currentPage.title;
         
         const response = await fetch(`${API_BASE}/page/${currentSubdomain}`, {
             method: 'PUT',
@@ -560,7 +588,6 @@ async function savePage() {
             credentials: 'include',
             body: JSON.stringify({
                 page_data: JSON.stringify({ blocks }),
-                custom_css: customCSS,
                 title: title
             })
         });
@@ -578,36 +605,46 @@ async function savePage() {
     }
 }
 
-// Helper functions - implement these based on your builder structure
-function collectBlocksFromBuilder() {
-    // This needs to be implemented based on your specific builder
-    const builderBlocks = document.querySelectorAll('.builder-block');
+function collectBlocksFromCanvas() {
+    const blockElements = document.querySelectorAll('#canvas .editable-block');
     const blocks = [];
     
-    builderBlocks.forEach(blockElement => {
-        // Extract block data from the DOM element
-        // This is a basic example - adapt to your builder
+    blockElements.forEach(blockElement => {
         const blockType = blockElement.dataset.blockType;
-        const blockData = {
+        // This is a simplified collection - you'd need to extract actual content
+        const block = {
             type: blockType,
-            content: {} // Extract content based on block type
+            content: {} // Extract actual content based on block type
         };
-        blocks.push(blockData);
+        blocks.push(block);
     });
     
     return blocks;
 }
 
-function getCustomCSS() {
-    const cssTextarea = document.getElementById('custom-css') || 
-                       document.querySelector('textarea[placeholder*="css"]');
-    return cssTextarea ? cssTextarea.value : '';
+// Initialize drag and drop for sidebar blocks
+document.addEventListener('DOMContentLoaded', () => {
+    const blockItems = document.querySelectorAll('.block-item');
+    blockItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            const blockType = e.target.closest('.block-item').dataset.blockType;
+            e.dataTransfer.setData('text/plain', blockType);
+        });
+    });
+});
+
+// Preview and publish functions
+function previewPage() {
+    if (currentSubdomain) {
+        window.open(`https://api.multigrounds.org/pages/${currentSubdomain}`, '_blank');
+    } else {
+        alert('Please save your page first');
+    }
 }
 
-function getPageTitle() {
-    const titleInput = document.getElementById('page-title') || 
-                      document.querySelector('input[placeholder*="title"]');
-    return titleInput ? titleInput.value : (currentPage ? currentPage.title : 'My Page');
+function publishPage() {
+    // For now, just save the page (it's automatically "published")
+    savePage();
 }
     </script>
 </body>

@@ -533,7 +533,7 @@ async function proceedToPayment() {
         
         const data = await response.json();
         if (data.success) {
-            alert(`Success! Your page "${subdomain}" has been created.\n\nYou can view it at: https://api.multigrounds.org/pages/${subdomain}\nOr edit it using the page builder.`);
+            alert(`Success! Your site "${subdomain}" has been created.\n\nYou can view it at: https://api.multigrounds.org/sites/${subdomain}\nOr edit it using the page builder.`);
             
             // Close modal and redirect
             const modal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
@@ -542,9 +542,9 @@ async function proceedToPayment() {
             }
             
             // Give user choice
-            const goToBuilder = confirm('Would you like to start building your page now?\n\nClick OK to go to Page Builder\nClick Cancel to stay here');
+            const goToBuilder = confirm('Would you like to start building your site now?\n\nClick OK to go to Page Builder\nClick Cancel to stay here');
             if (goToBuilder) {
-                window.location.href = '/pages/builder.html';
+                window.location.href = `/pages/builder.html?page=${subdomain}`;
             } else {
                 // Refresh the page to show updated state
                 window.location.reload();
