@@ -37,7 +37,7 @@
             padding: 1rem;
             border-bottom: 1px solid #e9ecef;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
@@ -52,7 +52,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 50vh;
+            min-height: 100vh;
         }
         
         .block-tool {
@@ -199,6 +199,7 @@
         let currentPage = null;
         let pageBlocks = [];
         let isInitialized = false;
+        let isInitializing = false; // Add this flag to prevent multiple concurrent initializations
 
         // Get subdomain from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -208,11 +209,13 @@
 
         // Single initialization function
         async function initializeBuilder() {
-            if (isInitialized) {
-                console.log('Builder already initialized, skipping...');
+            // Prevent multiple concurrent initializations
+            if (isInitialized || isInitializing) {
+                console.log('Builder already initialized or initializing, skipping...');
                 return;
             }
 
+            isInitializing = true;
             console.log('Starting builder initialization...');
             
             try {
@@ -290,6 +293,8 @@
             } catch (error) {
                 console.error('Builder initialization failed:', error);
                 showError(`Failed to initialize builder: ${error.message}`);
+            } finally {
+                isInitializing = false;
             }
         }
 
@@ -497,6 +502,8 @@
 
         async function savePage() {
             try {
+                console.log('Saving page...', currentPage.subdomain);
+                
                 const saveData = {
                     page_data: JSON.stringify({ blocks: pageBlocks }),
                     title: currentPage.title
@@ -512,6 +519,7 @@
                 });
                 
                 const result = await response.json();
+                console.log('Save result:', result);
                 
                 if (result.success) {
                     // Show success feedback briefly
@@ -527,6 +535,7 @@
                         }
                     }, 2000);
                 } else {
+                    console.error('Save failed:', result.message);
                     alert('Failed to save: ' + result.message);
                 }
             } catch (error) {
@@ -555,19 +564,13 @@
             }
         }
 
-        // Initialize when page loads - ONLY ONCE
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, starting initialization...');
+        // Initialize only once when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeBuilder);
+        } else {
+            // DOM is already ready
             initializeBuilder();
-        });
-
-        // Prevent multiple initializations
-        window.addEventListener('load', () => {
-            if (!isInitialized) {
-                console.log('Window loaded, starting initialization as fallback...');
-                initializeBuilder();
-            }
-        });
+        }
     </script>
 </body>
 </html>
