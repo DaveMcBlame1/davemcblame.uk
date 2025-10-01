@@ -33,5 +33,8 @@ switch ($request) {
     case '/pages/verify':
         require __DIR__ . '/pages/verify.html';
         break;
+    case '/pages/builder':
+        require __DIR__ . '/pages/builder.html';
+        break;
 }
 ?>
