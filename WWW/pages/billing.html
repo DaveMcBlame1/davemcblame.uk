@@ -10,9 +10,14 @@
   <style>
     .plan-card {
       transition: transform 0.2s;
+      cursor: pointer;
     }
     .plan-card:hover {
       transform: translateY(-5px);
+    }
+    .plan-card:disabled,
+    .plan-card[style*="pointer-events: none"] {
+      cursor: not-allowed;
     }
     .popular-badge {
       position: absolute;
@@ -320,7 +325,7 @@ const API_BASE = 'https://multigrounds.org:10065/api';
 let currentUser = null;
 let selectedPlan = null;
 
-// Plan data
+// Plan data - Updated to match your HTML
 const plans = {
     solo: {
         name: 'solo',
@@ -328,24 +333,29 @@ const plans = {
         monthlyCost: 5,
         features: ['1 Page', 'Basic Support', 'SSL Certificate']
     },
+    starter: {
+        name: 'starter',
+        setupCost: 16,
+        monthlyCost: 8,
+        features: ['3 Pages', 'Custom CSS', 'Priority Support', 'Analytics']
+    },
+    expansive: {
+        name: 'expansive',
+        setupCost: 32,
+        monthlyCost: 16,
+        features: ['8 Pages', 'Advanced blocks', 'SEO optimization', 'Contact forms']
+    },
     business: {
         name: 'business', 
-        setupCost: 25,
-        monthlyCost: 15,
-        features: ['5 Pages', 'Priority Support', 'Custom Domain', 'Analytics']
-    },
-    enterprise: {
-        name: 'enterprise',
-        setupCost: 50,
-        monthlyCost: 30,
-        features: ['Unlimited Pages', '24/7 Support', 'Custom Features', 'API Access']
+        setupCost: 64,
+        monthlyCost: 32,
+        features: ['15 Pages', 'White-label branding', '24/7 Support', 'Custom Domain']
     }
 };
 
 // Check login status when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     await checkLoginStatus();
-    setupPlanSelection();
 });
 
 async function checkLoginStatus() {
@@ -383,7 +393,7 @@ function showLoggedInState() {
     `;
     
     // Insert at the top of the main content
-    const mainContent = document.querySelector('.container');
+    const mainContent = document.querySelector('main .container');
     if (mainContent && !document.getElementById('user-info')) {
         mainContent.insertBefore(userInfo, mainContent.firstChild);
     }
@@ -400,49 +410,50 @@ function showLoggedOutState() {
         <a href="/pages/support" class="btn btn-primary btn-sm">Login / Register</a>
     `;
     
-    const mainContent = document.querySelector('.container');
+    const mainContent = document.querySelector('main .container');
     if (mainContent && !document.getElementById('login-prompt')) {
         mainContent.insertBefore(loginPrompt, mainContent.firstChild);
     }
     
-    // Disable the form
-    const form = document.querySelector('.plan-selection');
-    if (form) {
-        form.style.opacity = '0.5';
-        form.style.pointerEvents = 'none';
-    }
-}
-
-function setupPlanSelection() {
-    // Add click handlers to plan cards
+    // Disable the plan cards
     document.querySelectorAll('.plan-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const planName = this.dataset.plan;
-            selectPlan(planName);
-        });
+        card.style.opacity = '0.6';
+        card.style.pointerEvents = 'none';
     });
 }
 
-function selectPlan(planName) {
-    selectedPlan = plans[planName];
-    
-    // Update UI to show selected plan
-    document.querySelectorAll('.plan-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    const selectedCard = document.querySelector(`[data-plan="${planName}"]`);
-    if (selectedCard) {
-        selectedCard.classList.add('selected');
+// This function handles the onclick from your HTML buttons
+function selectPlan(planName, setupCost, monthlyCost) {
+    if (!currentUser) {
+        alert('Please log in first before selecting a plan.');
+        window.location.href = '/pages/support';
+        return;
     }
     
-    // Show the form
-    document.getElementById('page-creation-form').style.display = 'block';
+    // Set the selected plan data
+    selectedPlan = {
+        name: planName,
+        setupCost: setupCost,
+        monthlyCost: monthlyCost
+    };
     
-    // Update plan details in form
-    document.getElementById('selected-plan-name').textContent = selectedPlan.name.toUpperCase();
-    document.getElementById('setup-cost').textContent = `$${selectedPlan.setupCost}`;
-    document.getElementById('monthly-cost').textContent = `$${selectedPlan.monthlyCost}`;
+    // Update the modal with plan details
+    document.getElementById('selected-plan-name').textContent = planName.toUpperCase() + ' Plan';
+    document.getElementById('setup-cost').textContent = setupCost;
+    document.getElementById('monthly-cost').textContent = monthlyCost;
+    
+    // Check login status in modal
+    if (currentUser) {
+        document.getElementById('login-required').style.display = 'none';
+        document.getElementById('purchase-form').style.display = 'block';
+    } else {
+        document.getElementById('login-required').style.display = 'block';
+        document.getElementById('purchase-form').style.display = 'none';
+    }
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('planModal'));
+    modal.show();
 }
 
 async function proceedToPayment() {
@@ -458,7 +469,7 @@ async function proceedToPayment() {
         return;
     }
     
-    const subdomain = document.getElementById('subdomain-input').value.trim();
+    const subdomain = document.getElementById('subdomain-input').value.trim().toLowerCase();
     const termsChecked = document.getElementById('terms-check').checked;
     
     if (!subdomain) {
@@ -494,6 +505,12 @@ async function proceedToPayment() {
         return;
     }
     
+    // Show loading state
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.disabled = true;
+    
     // Create the purchase
     try {
         const response = await fetch(`${API_BASE}/create-purchase`, {
@@ -504,20 +521,37 @@ async function proceedToPayment() {
                 subdomain: subdomain,
                 plan: selectedPlan.name,
                 setupCost: selectedPlan.setupCost,
-                monthlyCost: selectedPlan.monthlyCost
+                monthlyCost: selectedPlan.monthlyCost,
+                title: `${subdomain}'s Page`
             })
         });
         
         const data = await response.json();
         if (data.success) {
-            alert(`Success! Your page "${subdomain}" has been created.`);
-            window.location.href = '/pages/builder.html';
+            alert(`Success! Your page "${subdomain}" has been created.\n\nYou can view it at: https://multigrounds.org/${subdomain}\nOr edit it using the page builder.`);
+            
+            // Close modal and redirect
+            const modal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
+            modal.hide();
+            
+            // Give user choice
+            const goToBuilder = confirm('Would you like to start building your page now?\n\nClick OK to go to Page Builder\nClick Cancel to stay here');
+            if (goToBuilder) {
+                window.location.href = '/pages/builder.html';
+            } else {
+                // Refresh the page to show updated state
+                window.location.reload();
+            }
         } else {
             alert('Error: ' + data.message);
         }
     } catch (error) {
         console.error('Purchase error:', error);
         alert('Error processing purchase. Please try again.');
+    } finally {
+        // Restore button state
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
@@ -532,6 +566,7 @@ async function logout() {
             currentUser = null;
             document.getElementById('user-info')?.remove();
             showLoggedOutState();
+            alert('You have been logged out.');
         }
     } catch (error) {
         console.error('Logout error:', error);
