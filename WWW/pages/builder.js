@@ -1,8 +1,10 @@
-// Update these lines to use window variables:
+// Make sure this is at the top of your builder.js file:
 window.API_BASE = 'https://api.multigrounds.org:10065/api';
-window.currentUser = window.currentUser || null;
-window.currentPage = window.currentPage || null;
-window.currentSubdomain = window.currentSubdomain || null;
+
+// Update these lines to use window variables:
+// window.currentUser = window.currentUser || null;
+// window.currentPage = window.currentPage || null;
+// window.currentSubdomain = window.currentSubdomain || null;
 
 const API_BASE = 'https://multigrounds.org:10065/api';  // Fixed URL
 let currentPage = null;

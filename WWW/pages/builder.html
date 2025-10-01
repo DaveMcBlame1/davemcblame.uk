@@ -185,20 +185,20 @@
     <script>
 // Check if variables are already declared to avoid duplicates
 if (typeof currentUser === 'undefined') {
-    let currentUser = null;
+    var currentUser = null;
 }
 if (typeof currentPage === 'undefined') {
-    let currentPage = null;
+    var currentPage = null;
 }
 if (typeof currentSubdomain === 'undefined') {
-    let currentSubdomain = null;
+    var currentSubdomain = null;
 }
-
-// Use the API_BASE from builder.js or set a default
-const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Builder loaded, initializing...');
+    
+    // Use the API_BASE from builder.js
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     // First check if user is logged in
     try {
@@ -236,6 +236,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadPageForEditing(subdomain) {
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    
     try {
         const response = await fetch(`${API_BASE}/page/${subdomain}`, {
             credentials: 'include'
@@ -300,7 +302,7 @@ function updatePageDisplay(page) {
     const urlElement = document.getElementById('page-url');
     if (urlElement) {
         urlElement.innerHTML = `<a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none">
-            multigrounds.org/sites/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
+            View Live: multigrounds.org/sites/${page.subdomain} <i class="fas fa-external-link-alt ms-1"></i>
         </a>`;
     }
 }
@@ -449,6 +451,8 @@ function showEmptyBuilder() {
 }
 
 function showPageSelector() {
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
+    
     fetch(`${API_BASE}/my-pages`, {
         credentials: 'include'
     })
@@ -578,6 +582,8 @@ async function savePage() {
         alert('No page loaded to save');
         return;
     }
+    
+    const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     try {
         const blocks = collectBlocksFromCanvas();
