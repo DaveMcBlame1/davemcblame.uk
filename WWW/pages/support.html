@@ -148,15 +148,22 @@
       <div id="login-section" class="card mb-4">
         <div class="card-body">
           <h3>Login to Submit Tickets</h3>
-          <form id="login-form">
+          <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="mb-3">
-              <input type="text" id="login-username" class="form-control" placeholder="Username" required>
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" name="username" required>
             </div>
             <div class="mb-3">
-              <input type="password" id="login-password" class="form-control" placeholder="Password" required>
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-            <button type="button" id="show-register" class="btn btn-link">Need an account? Register</button>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+              <label class="form-check-label" for="remember_me">
+                Remember me (stay logged in for 30 days)
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
           </form>
         </div>
       </div>
@@ -387,37 +394,36 @@ function showTicketSection() {
 
 async function handleLogin(event) {
     event.preventDefault();
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
     
-    if (!username || !password) {
-        alert('Please enter both username and password');
-        return;
-    }
+    const formData = new FormData(event.target);
+    const loginData = {
+        username: formData.get('username'),
+        password: formData.get('password'),
+        remember_me: formData.get('remember_me') === 'on'
+    };
     
     try {
         const response = await fetch(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify(loginData)
         });
         
         const data = await response.json();
+        
         if (data.success) {
-            currentUser = {
-                username: data.username,
-                is_admin: data.is_admin
-            };
+            currentUser = data.user;
+            console.log('Login successful:', currentUser.username);
+            console.log('Remember me:', loginData.remember_me);
             
-            alert('Login successful!');
             showTicketSection();
         } else {
-            alert(data.message);
+            alert('Login failed: ' + data.message);
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Please try again.');
+        alert('Login error. Please try again.');
     }
 }
 
@@ -702,13 +708,25 @@ async function logout() {
             credentials: 'include'
         });
         
-        if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
             currentUser = null;
-            alert('You have been logged out.');
-            showAuthForms();
+            console.log('Logged out successfully');
+            
+            // Show login section
+            document.getElementById('ticket-section').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('register-section').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('loginForm').reset();
         }
     } catch (error) {
         console.error('Logout error:', error);
+        // Fallback - still show login section
+        currentUser = null;
+        document.getElementById('ticket-section').style.display = 'none';
+        document.getElementById('login-section').style.display = 'block';
     }
 }
 
