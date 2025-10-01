@@ -99,6 +99,10 @@ switch ($request) {
     case '/pages/policy':
         require __DIR__ . '/pages/policy.html';
         break;
+
+    case '/pages/signup':
+        require __DIR__ . '/pages/signup.html';
+        break;
     
     default:
         // 404 for unknown routes
