@@ -77,6 +77,29 @@
         .navbar-brand {
             font-weight: 600;
         }
+
+        .admin-indicator {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            font-weight: bold;
+        }
+
+        .page-card.admin-view {
+            border-left: 4px solid #007bff;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .delete-confirmation {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -174,9 +197,18 @@
                 }
                 
                 currentUser = data.user;
-                document.getElementById('user-info').textContent = `Welcome, ${currentUser.username}`;
+                const userInfoText = currentUser.is_admin ? 
+                    `Welcome, ${currentUser.username} (Admin)` : 
+                    `Welcome, ${currentUser.username}`;
+                document.getElementById('user-info').textContent = userInfoText;
                 
-                // Load user's pages
+                // Update page title for admins
+                if (currentUser.is_admin) {
+                    document.querySelector('h1').textContent = 'All Pages (Admin View)';
+                    document.querySelector('h1').nextElementSibling.textContent = 'Manage all user websites';
+                }
+                
+                // Load user's pages (or all pages for admin)
                 await loadUserPages();
                 
             } catch (error) {
@@ -188,7 +220,10 @@
 
         async function loadUserPages() {
             try {
-                const response = await fetch(`${API_BASE}/my-pages`, {
+                // Use different endpoint for admins to see all pages
+                const endpoint = currentUser.is_admin ? '/all-pages' : '/my-pages';
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, {
                     credentials: 'include'
                 });
                 const data = await response.json();
@@ -234,12 +269,19 @@
                 }[page.plan] || 'primary';
                 
                 const createdDate = new Date(page.created_at).toLocaleDateString();
+                const isOwner = page.user_id === currentUser.id;
+                const canDelete = currentUser.is_admin || isOwner;
                 
                 return `
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card page-card" onclick="editPage('${page.subdomain}')">
-                            <div class="page-thumbnail ${hasContent ? 'has-content' : ''}">
+                        <div class="card page-card ${currentUser.is_admin && !isOwner ? 'admin-view' : ''}">
+                            <div class="page-thumbnail ${hasContent ? 'has-content' : ''}" onclick="editPage('${page.subdomain}')">
                                 <span class="badge bg-${planColor} plan-badge">${page.plan}</span>
+                                ${currentUser.is_admin && !isOwner ? `
+                                    <span class="badge bg-info position-absolute admin-indicator" style="top: 10px; left: 10px;">
+                                        ${page.username}
+                                    </span>
+                                ` : ''}
                                 <div class="overlay">
                                     <div class="text-white text-center">
                                         <i class="fas fa-edit fa-2x mb-2"></i>
@@ -248,10 +290,15 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <h5 class="card-title mb-2">${page.title}</h5>
+                                <h5 class="card-title mb-2">
+                                    ${page.title}
+                                    ${currentUser.is_admin && !isOwner ? `
+                                        <small class="text-muted">(by ${page.username})</small>
+                                    ` : ''}
+                                </h5>
                                 <p class="card-text">
                                     <small class="text-muted">
-                                        <i class="fas fa-globe"></i> multigrounds.org${page.subdomain}
+                                        <i class="fas fa-globe"></i> multigrounds.org/sites/${page.subdomain}
                                     </small><br>
                                     <small class="text-muted">
                                         <i class="fas fa-calendar"></i> Created ${createdDate}
@@ -265,6 +312,11 @@
                                         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); editPage('${page.subdomain}')">
                                             <i class="fas fa-edit"></i> Edit
                                         </button>
+                                        ${canDelete ? `
+                                            <button class="btn btn-outline-danger btn-sm" onclick="event.stopPropagation(); deletePage('${page.subdomain}', '${page.title}', ${isOwner})">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        ` : ''}
                                     </div>
                                     <span class="badge bg-${page.is_active ? 'success' : 'secondary'}">
                                         ${page.is_active ? 'Active' : 'Inactive'}
@@ -332,6 +384,41 @@
             } catch (error) {
                 console.error('Logout error:', error);
                 window.location.href = '/pages/support';
+            }
+        }
+
+        async function deletePage(subdomain, title, isOwner) {
+            const ownerText = isOwner ? 'your' : `${subdomain} (owned by another user)`;
+            const confirmMessage = `Are you sure you want to delete ${ownerText} page "${title}"?\n\nThis action cannot be undone and will permanently delete:\n- The page content\n- All associated data\n- The live website\n\nType "DELETE" to confirm:`;
+            
+            const confirmation = prompt(confirmMessage);
+            
+            if (confirmation !== 'DELETE') {
+                alert('Page deletion cancelled.');
+                return;
+            }
+            
+            try {
+                console.log('Deleting page:', subdomain);
+                
+                const response = await fetch(`${API_BASE}/page/${subdomain}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Page "${title}" has been deleted successfully.`);
+                    // Reload the pages list
+                    await loadUserPages();
+                } else {
+                    alert('Error deleting page: ' + data.message);
+                }
+                
+            } catch (error) {
+                console.error('Error deleting page:', error);
+                alert('Error deleting page. Please try again.');
             }
         }
     </script>
