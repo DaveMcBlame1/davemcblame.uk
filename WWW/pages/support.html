@@ -164,7 +164,7 @@
   </div>
 </main>
 
-<!-- Create Ticket Modal -->
+<!-- Create Ticket Modal (Keep only this one) -->
 <div class="modal fade" id="createTicketModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -175,16 +175,16 @@
             <div class="modal-body">
                 <form id="create-ticket-form">
                     <div class="mb-3">
-                        <label for="ticket-title" class="form-label">Title *</label>
-                        <input type="text" class="form-control" id="ticket-title" required>
+                        <label for="new-ticket-title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="new-ticket-title" required placeholder="Brief description of your issue">
                     </div>
                     <div class="mb-3">
-                        <label for="ticket-description" class="form-label">Description *</label>
-                        <textarea class="form-control" id="ticket-description" rows="4" required placeholder="Please describe your issue in detail..."></textarea>
+                        <label for="new-ticket-description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="new-ticket-description" rows="4" required placeholder="Please describe your issue in detail..."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="ticket-priority" class="form-label">Priority</label>
-                        <select class="form-control" id="ticket-priority">
+                        <label for="new-ticket-priority" class="form-label">Priority</label>
+                        <select class="form-control" id="new-ticket-priority">
                             <option value="low">Low</option>
                             <option value="medium" selected>Medium</option>
                             <option value="high">High</option>
@@ -201,450 +201,13 @@
 </div>
 
 <script>
-const API_BASE = 'https://api.multigrounds.org:10065/api';
-let isAdmin = false;
+const API_BASE = 'https://multigrounds.org:10065/api';
+let currentUser = null;
 
-// Show/hide forms
-document.getElementById('show-register').onclick = () => {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('register-section').style.display = 'block';
-};
-
-document.getElementById('show-login').onclick = () => {
-  document.getElementById('register-section').style.display = 'none';
-  document.getElementById('login-section').style.display = 'block';
-};
-
-// Registration
-document.getElementById('register-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const res = await fetch(`${API_BASE}/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: document.getElementById('reg-username').value,
-      email: document.getElementById('reg-email').value,
-      password: document.getElementById('reg-password').value
-    })
-  });
-  const data = await res.json();
-  
-  if (data.success) {
-    document.getElementById('register-section').innerHTML = `
-      <div class="card-body">
-        <div class="alert alert-success">
-          <h5>Registration Initiated!</h5>
-          <p>${data.message}</p>
-          <hr>
-          <p class="mb-0">
-            <small>
-              Didn't receive the email? Check your spam folder or 
-              <button class="btn btn-link p-0" onclick="showResendForm()">click here to resend</button>
-            </small>
-          </p>
-        </div>
-        <button type="button" id="back-to-login" class="btn btn-primary">Back to Login</button>
-      </div>
-    `;
-    
-    document.getElementById('back-to-login').onclick = () => {
-      location.reload();
-    };
-  } else {
-    alert(data.message);
-  }
-};
-
-// Login
-document.getElementById('login-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('login-username').value;
-  const password = document.getElementById('login-password').value;
-  
-  try {
-      const response = await fetch(`${API_BASE}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ username, password })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-          console.log('Login successful!', data);
-          
-          // Store user info globally
-          window.currentUser = {
-              username: data.username,
-              is_admin: data.is_admin
-          };
-          
-          // Store in session object for compatibility
-          window.session = {
-              username: data.username,
-              is_admin: data.is_admin
-          };
-          
-          alert('Login successful!');
-          loadDashboard();
-      } else {
-          alert(data.message);
-      }
-  } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed. Please try again.');
-  }
-};
-
-// Logout
-document.getElementById('logout-btn').onclick = async () => {
-  await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
-  location.reload();
-};
-
-// Create ticket
-document.getElementById('ticket-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const res = await fetch(`${API_BASE}/tickets`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      title: document.getElementById('ticket-title').value,
-      description: document.getElementById('ticket-description').value,
-      priority: document.getElementById('ticket-priority').value
-    })
-  });
-  const data = await res.json();
-  alert(data.message);
-  if (data.success) {
-    document.getElementById('ticket-form').reset();
-    loadTickets();
-  }
-}
-
-// Update ticket status
-async function updateTicketStatus(ticketId, status) {
-  const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ status })
-  });
-  const data = await res.json();
-  if (data.success) {
-    loadTickets();
-  } else {
-    alert(data.message);
-  }
-}
-
-// Add comment to ticket
-async function addComment(ticketId) {
-  const content = document.getElementById(`comment-${ticketId}`).value.trim();
-  if (!content) {
-    alert('Please enter a comment before submitting.');
-    return;
-  }
-  
-  const res = await fetch(`${API_BASE}/tickets/${ticketId}/comments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ content })
-  });
-  
-  const data = await res.json();
-  if (data.success) {
-    document.getElementById(`comment-${ticketId}`).value = '';
-    loadTickets();
-  } else {
-    alert(data.message);
-  }
-}
-
-// Load tickets
-async function loadTickets() {
-  const res = await fetch(`${API_BASE}/tickets`, { credentials: 'include' });
-  const data = await res.json();
-  
-  if (data.success) {
-    if (isAdmin) {
-      document.getElementById('admin-tickets').style.display = 'block';
-      document.getElementById('user-tickets').style.display = 'none';
-      
-      const activeList = document.getElementById('active-tickets-list');
-      const openTickets = data.tickets.open || [];
-      activeList.innerHTML = '';
-      document.getElementById('active-count').textContent = openTickets.length;
-      
-      if (openTickets.length === 0) {
-        activeList.innerHTML = '<div class="text-muted text-center py-4">No active tickets</div>';
-      } else {
-        openTickets.forEach(ticket => {
-          activeList.appendChild(createTicketElement(ticket, true));
-        });
-      }
-      
-      const closedList = document.getElementById('closed-tickets-list');
-      const closedTickets = data.tickets.closed || [];
-      closedList.innerHTML = '';
-      document.getElementById('closed-count').textContent = closedTickets.length;
-      
-      if (closedTickets.length === 0) {
-        closedList.innerHTML = '<div class="text-muted text-center py-4">No closed tickets</div>';
-      } else {
-        closedTickets.forEach(ticket => {
-          closedList.appendChild(createClosedTicketElement(ticket));
-        });
-      }
-    } else {
-      document.getElementById('admin-tickets').style.display = 'none';
-      document.getElementById('user-tickets').style.display = 'block';
-      
-      const userList = document.getElementById('user-tickets-list');
-      const userTickets = data.tickets.user || [];
-      userList.innerHTML = '';
-      
-      if (userTickets.length === 0) {
-        userList.innerHTML = '<div class="text-muted text-center py-4">No tickets submitted yet</div>';
-      } else {
-        userTickets.forEach(ticket => {
-          userList.appendChild(createTicketElement(ticket, false));
-        });
-      }
-    }
-  }
-}
-
-// Create full ticket element
-function createTicketElement(ticket, isAdminView) {
-  const div = document.createElement('div');
-  div.className = `border p-3 mb-3 rounded ticket-priority-${ticket.priority}`;
-  
-  const statusColor = ticket.status === 'open' ? 'danger' : 'warning';
-  const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'info';
-  
-  let priorityIcon = '';
-  if (ticket.priority === 'high') {
-    priorityIcon = '<i class="fas fa-exclamation-triangle text-danger priority-indicator"></i>';
-  } else if (ticket.priority === 'medium') {
-    priorityIcon = '<i class="fas fa-exclamation text-warning priority-indicator"></i>';
-  } else {
-    priorityIcon = '<i class="fas fa-info-circle text-info priority-indicator"></i>';
-  }
-  
-  let statusControls = '';
-  if (isAdminView) {
-    statusControls = `
-      <div class="mt-2">
-        <button class="btn btn-sm btn-warning" onclick="updateTicketStatus(${ticket.id}, 'in-progress')">
-          <i class="fas fa-clock"></i> In Progress
-        </button>
-        <button class="btn btn-sm btn-success" onclick="updateTicketStatus(${ticket.id}, 'closed')">
-          <i class="fas fa-check"></i> Close
-        </button>
-        ${ticket.status !== 'open' ? `<button class="btn btn-sm btn-danger" onclick="updateTicketStatus(${ticket.id}, 'open')">
-          <i class="fas fa-redo"></i> Reopen
-        </button>` : ''}
-      </div>
-    `;
-  }
-  
-  let commentsHtml = '';
-  if (ticket.comments && ticket.comments.length > 0) {
-    commentsHtml = '<div class="mt-3"><h6>Comments:</h6>';
-    ticket.comments.forEach(comment => {
-      const commentClass = comment.is_admin_reply ? 'bg-light border-start border-primary border-3' : 'bg-white border-start border-secondary border-2';
-      const userBadge = comment.is_admin_reply ? '<span class="badge bg-primary">Admin</span>' : '';
-      commentsHtml += `
-        <div class="${commentClass} p-2 mb-2 rounded">
-          <small><strong>${comment.username}</strong> ${userBadge} - ${new Date(comment.created_at).toLocaleString()}</small>
-          <p class="mb-0 mt-1">${comment.content}</p>
-        </div>
-      `;
-    });
-    commentsHtml += '</div>';
-  }
-  
-  let commentSection = '';
-  if (ticket.status !== 'closed') {
-    commentSection = `
-      <div class="mt-3">
-        <div class="input-group">
-          <textarea class="form-control" id="comment-${ticket.id}" placeholder="Add a comment..." rows="2"></textarea>
-          <button class="btn btn-outline-primary" onclick="addComment(${ticket.id})">
-            <i class="fas fa-paper-plane"></i> Reply
-          </button>
-        </div>
-      </div>
-    `;
-  } else {
-    commentSection = `
-      <div class="mt-3">
-        <div class="alert alert-secondary small mb-0">
-          <i class="fas fa-lock"></i> Comments are disabled on closed tickets
-        </div>
-      </div>
-    `;
-  }
-  
-  div.innerHTML = `
-    <div class="d-flex justify-content-between align-items-start">
-      <h5>${priorityIcon}${ticket.title}</h5>
-      <div>
-        <span class="badge bg-${statusColor}">${ticket.status}</span>
-        <span class="badge bg-${priorityColor}">${ticket.priority}</span>
-      </div>
-    </div>
-    <p>${ticket.description}</p>
-    <small><strong>By:</strong> ${ticket.username} | <strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</small>
-    ${statusControls}
-    ${commentsHtml}
-    ${commentSection}
-  `;
-  
-  return div;
-}
-
-// Create compact ticket element for closed tickets
-function createClosedTicketElement(ticket) {
-  const div = document.createElement('div');
-  div.className = 'border p-2 mb-2 rounded bg-light';
-  
-  const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'info';
-  
-  div.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h6 class="mb-1">${ticket.title}</h6>
-        <small class="text-muted">
-          <strong>${ticket.username}</strong> • 
-          Closed: ${new Date(ticket.updated_at).toLocaleDateString()}
-        </small>
-      </div>
-      <div>
-        <span class="badge bg-success">closed</span>
-        <span class="badge bg-${priorityColor}">${ticket.priority}</span>
-      </div>
-    </div>
-    <div class="mt-2">
-      <button class="btn btn-sm btn-outline-danger" onclick="updateTicketStatus(${ticket.id}, 'open')">
-        <i class="fas fa-redo"></i> Reopen
-      </button>
-    </div>
-  `;
-  
-  return div;
-}
-
-function showTicketSection() {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('register-section').style.display = 'none';
-  document.getElementById('ticket-section').style.display = 'block';
-  
-  if (isAdmin) {
-    document.getElementById('admin-badge').style.display = 'inline-block';
-  }
-}
-
-// Add this function to your support.html JavaScript section
-function loadDashboard() {
-    try {
-        console.log('Loading dashboard...');
-        
-        // Hide login/register forms - try multiple possible selectors
-        const authForms = document.getElementById('auth-forms') || 
-                         document.querySelector('.auth-forms') || 
-                         document.querySelector('[id*="auth"]') ||
-                         document.querySelector('form');
-        
-        if (authForms) {
-            authForms.style.display = 'none';
-            console.log('Hidden auth forms');
-        } else {
-            console.log('Auth forms element not found, trying to hide individual forms');
-            // Try to hide individual login/register forms
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            if (loginForm) loginForm.parentElement.style.display = 'none';
-            if (registerForm) registerForm.parentElement.style.display = 'none';
-        }
-        
-        // Show dashboard - try multiple possible selectors
-        let dashboard = document.getElementById('dashboard') || 
-                       document.querySelector('.dashboard') ||
-                       document.querySelector('[id*="dashboard"]');
-        
-        if (!dashboard) {
-            // Create dashboard if it doesn't exist
-            console.log('Dashboard element not found, creating it...');
-            dashboard = document.createElement('div');
-            dashboard.id = 'dashboard';
-            dashboard.innerHTML = `
-                <div class="container py-4">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h2>Welcome back, ${session.username || 'User'}!</h2>
-                                <div>
-                                    <button class="btn btn-outline-secondary me-2" onclick="logout()">Logout</button>
-                                    <a href="/pages/billing" class="btn btn-primary">Create New Page</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">Support Tickets</h5>
-                                        <button class="btn btn-success btn-sm" onclick="showCreateTicketModal()">
-                                            <i class="fas fa-plus"></i> New Ticket
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div id="tickets-container">
-                                        <div class="text-center py-4">
-                                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
-                                            <p class="text-muted mt-2">Loading tickets...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Insert dashboard after the main container or at the end of body
-            const mainContainer = document.querySelector('.container') || document.body;
-            if (mainContainer.tagName === 'DIV') {
-                mainContainer.appendChild(dashboard);
-            } else {
-                document.body.appendChild(dashboard);
-            }
-        }
-        
-        dashboard.style.display = 'block';
-        console.log('Dashboard shown');
-        
-        // Load user's tickets and data
-        loadTickets();
-        
-        console.log('Dashboard loaded successfully');
-    } catch (error) {
-        console.error('Error loading dashboard:', error);
-        // Fallback - just show a simple message and load tickets
-        alert('Welcome! You are now logged in.');
-        loadTickets();
-    }
-}
-
-// Check if user is already logged in
 document.addEventListener('DOMContentLoaded', async () => {
+    // Set up form handlers
+    setupFormHandlers();
+    
     console.log('Page loaded, checking login status...');
     
     // Check if user is already logged in
@@ -658,39 +221,282 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (data.success && data.logged_in) {
             console.log('User already logged in:', data.user.username);
-            
-            // Store user info globally
-            window.currentUser = data.user;
-            
-            // Load dashboard immediately
-            setTimeout(() => {
-                loadDashboard();
-            }, 500); // Small delay to ensure DOM is ready
-            
+            currentUser = data.user;
+            showTicketSection();
         } else {
             console.log('User not logged in, showing auth forms');
-            // Make sure auth forms are visible
-            const authForms = document.getElementById('auth-forms') || document.querySelector('form');
-            if (authForms) {
-                authForms.style.display = 'block';
-            }
+            showAuthForms();
         }
     } catch (error) {
         console.error('Error checking login status:', error);
-        console.log('Assuming user is not logged in due to error');
+        showAuthForms();
     }
 });
 
-// Add these functions to support.html
+function setupFormHandlers() {
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    
+    // Register form  
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    
+    // Ticket form
+    document.getElementById('ticket-form').addEventListener('submit', handleTicketSubmit);
+    
+    // Show/hide form buttons
+    document.getElementById('show-register').addEventListener('click', () => {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('register-section').style.display = 'block';
+    });
+    
+    document.getElementById('show-login').addEventListener('click', () => {
+        document.getElementById('register-section').style.display = 'none';
+        document.getElementById('login-section').style.display = 'block';
+    });
+    
+    // Logout button
+    document.getElementById('logout-btn').addEventListener('click', logout);
+}
+
+function showAuthForms() {
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('register-section').style.display = 'none';
+    document.getElementById('ticket-section').style.display = 'none';
+}
+
+function showTicketSection() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('register-section').style.display = 'none';
+    document.getElementById('ticket-section').style.display = 'block';
+    
+    // Show admin sections if user is admin
+    if (currentUser && currentUser.is_admin) {
+        document.getElementById('admin-badge').style.display = 'inline';
+        document.getElementById('admin-tickets').style.display = 'block';
+        document.getElementById('user-tickets').style.display = 'none';
+    } else {
+        document.getElementById('admin-tickets').style.display = 'none';
+        document.getElementById('user-tickets').style.display = 'block';
+    }
+    
+    loadTickets();
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            currentUser = {
+                username: data.username,
+                is_admin: data.is_admin
+            };
+            
+            alert('Login successful!');
+            showTicketSection();
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please try again.');
+    }
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    
+    if (!username || !email || !password) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, email, password })
+        });
+        
+        const data = await response.json();
+        alert(data.message);
+        
+        if (data.success) {
+            event.target.reset();
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed. Please try again.');
+    }
+}
+
+async function handleTicketSubmit(event) {
+    event.preventDefault();
+    const title = document.getElementById('ticket-title').value.trim();
+    const description = document.getElementById('ticket-description').value.trim();
+    const priority = document.getElementById('ticket-priority').value;
+    
+    if (!title || !description) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/tickets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ title, description, priority })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert('Ticket created successfully!');
+            event.target.reset();
+            loadTickets();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        alert('Error creating ticket. Please try again.');
+    }
+}
+
+async function loadTickets() {
+    try {
+        const response = await fetch(`${API_BASE}/tickets`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            displayTickets(data.tickets);
+        } else {
+            console.error('Failed to load tickets:', data.message);
+        }
+    } catch (error) {
+        console.error('Error loading tickets:', error);
+    }
+}
+
+function displayTickets(tickets) {
+    if (currentUser && currentUser.is_admin) {
+        displayAdminTickets(tickets);
+    } else {
+        displayUserTickets(tickets.user || []);
+    }
+}
+
+function displayAdminTickets(tickets) {
+    const activeList = document.getElementById('active-tickets-list');
+    const closedList = document.getElementById('closed-tickets-list');
+    const activeCount = document.getElementById('active-count');
+    const closedCount = document.getElementById('closed-count');
+    
+    const activeTickets = tickets.open || [];
+    const closedTickets = tickets.closed || [];
+    
+    activeCount.textContent = activeTickets.length;
+    closedCount.textContent = closedTickets.length;
+    
+    // Display active tickets
+    if (activeTickets.length === 0) {
+        activeList.innerHTML = '<p class="text-muted">No active tickets</p>';
+    } else {
+        activeList.innerHTML = activeTickets.map(ticket => createTicketHTML(ticket)).join('');
+    }
+    
+    // Display closed tickets
+    if (closedTickets.length === 0) {
+        closedList.innerHTML = '<p class="text-muted">No closed tickets</p>';
+    } else {
+        closedList.innerHTML = closedTickets.map(ticket => createTicketHTML(ticket, true)).join('');
+    }
+}
+
+function displayUserTickets(tickets) {
+    const userList = document.getElementById('user-tickets-list');
+    
+    if (tickets.length === 0) {
+        userList.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No tickets yet</h5>
+                <p class="text-muted">Submit your first support ticket using the form above.</p>
+            </div>
+        `;
+    } else {
+        userList.innerHTML = tickets.map(ticket => createTicketHTML(ticket)).join('');
+    }
+}
+
+function createTicketHTML(ticket, isCompact = false) {
+    const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'secondary';
+    const statusColor = ticket.status === 'open' ? 'success' : ticket.status === 'closed' ? 'secondary' : 'primary';
+    
+    return `
+        <div class="card mb-3 ticket-priority-${ticket.priority}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">${ticket.title}</h6>
+                <div>
+                    <span class="badge bg-${priorityColor} me-2">${ticket.priority}</span>
+                    <span class="badge bg-${statusColor}">${ticket.status}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                ${isCompact ? '' : `<p class="mb-2">${ticket.description}</p>`}
+                <small class="text-muted">
+                    Created: ${new Date(ticket.created_at).toLocaleDateString()}
+                    ${currentUser?.is_admin ? ` | By: ${ticket.username}` : ''}
+                </small>
+                
+                ${ticket.comments && ticket.comments.length > 0 ? `
+                    <div class="mt-3">
+                        <h6>Comments:</h6>
+                        ${ticket.comments.map(comment => `
+                            <div class="border-start ps-3 mb-2 ${comment.is_admin_reply ? 'border-primary' : 'border-secondary'}">
+                                <strong>${comment.username}${comment.is_admin_reply ? ' (Admin)' : ''}:</strong>
+                                <p class="mb-1">${comment.content}</p>
+                                <small class="text-muted">${new Date(comment.created_at).toLocaleDateString()}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// Modal functions (keeping for compatibility)
 function showCreateTicketModal() {
     const modal = new bootstrap.Modal(document.getElementById('createTicketModal'));
     modal.show();
 }
 
 function createTicket() {
-    const title = document.getElementById('ticket-title').value.trim();
-    const description = document.getElementById('ticket-description').value.trim();
-    const priority = document.getElementById('ticket-priority').value;
+    const title = document.getElementById('new-ticket-title').value.trim();
+    const description = document.getElementById('new-ticket-description').value.trim();
+    const priority = document.getElementById('new-ticket-priority').value;
     
     if (!title || !description) {
         alert('Please fill in all required fields');
@@ -709,9 +515,7 @@ function createTicket() {
             alert('Ticket created successfully!');
             const modal = bootstrap.Modal.getInstance(document.getElementById('createTicketModal'));
             modal.hide();
-            loadTickets(); // Reload tickets
-            
-            // Clear form
+            loadTickets();
             document.getElementById('create-ticket-form').reset();
         } else {
             alert('Error: ' + data.message);
@@ -722,23 +526,47 @@ function createTicket() {
         alert('Error creating ticket. Please try again.');
     });
 }
-    <footer class="footer">
+
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            currentUser = null;
+            alert('You have been logged out.');
+            showAuthForms();
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+</script>
+
+<!-- Load Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<footer class="footer">
     <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
     <span class="version"></span>
-    <script>
-    async function loadVersion() {
-      const vars = await fetch("/globaldata.json")
+</footer>
+
+<script>
+async function loadVersion() {
+    const vars = await fetch("/globaldata.json")
         .then(r => r.json())
         .catch(e => console.error("Error fetching file", e));
 
-      let versionElements = document.querySelectorAll(".version");
-      for (const versionElement of versionElements) {
+    let versionElements = document.querySelectorAll(".version");
+    for (const versionElement of versionElements) {
         versionElement.innerText = vars.version ?? "Not found";
-      }
     }
+}
 
-    loadVersion();
-    </script>
-  </footer>
-  </body>
+loadVersion();
+</script>
+
+</body>
 </html>
