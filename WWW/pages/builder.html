@@ -96,6 +96,52 @@
             border-radius: 8px;
             border-left: 4px solid #4caf50;
         }
+
+        .block-editable {
+            position: relative;
+            min-height: 50px;
+            margin: 10px 0;
+            padding: 10px;
+            outline: 2px dashed transparent;
+            transition: outline 0.3s ease;
+        }
+        .block-editable:hover {
+            outline: 2px dashed #007bff;
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        .block-controls {
+            position: absolute;
+            top: -40px;
+            right: 5px;
+            background: #007bff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .block-editable:hover .block-controls {
+            opacity: 1;
+        }
+        .block-controls button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 4px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 0 2px;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+        }
+        .block-controls button:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        /* Ensure first block has proper spacing */
+        .block-editable:first-child {
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
@@ -199,7 +245,7 @@
         let currentPage = null;
         let pageBlocks = [];
         let isInitialized = false;
-        let isInitializing = false; // Add this flag to prevent multiple concurrent initializations
+        let isInitializing = false;
 
         // Get subdomain from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -337,22 +383,27 @@
                     <style>
                         .block-editable {
                             position: relative;
-                            min-height: 30px;
+                            min-height: 50px;
+                            margin: 10px 0;
+                            padding: 10px;
                             outline: 2px dashed transparent;
                             transition: outline 0.3s ease;
                         }
                         .block-editable:hover {
                             outline: 2px dashed #007bff;
+                            background-color: rgba(0, 123, 255, 0.05);
                         }
                         .block-controls {
                             position: absolute;
-                            top: -35px;
-                            right: 0;
+                            top: -40px;
+                            right: 5px;
                             background: #007bff;
-                            padding: 5px;
+                            padding: 5px 8px;
                             border-radius: 4px;
                             opacity: 0;
                             transition: opacity 0.3s ease;
+                            z-index: 1000;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
                         }
                         .block-editable:hover .block-controls {
                             opacity: 1;
@@ -361,9 +412,19 @@
                             background: none;
                             border: none;
                             color: white;
-                            padding: 2px 5px;
+                            padding: 4px 6px;
                             cursor: pointer;
                             font-size: 12px;
+                            margin: 0 2px;
+                            border-radius: 3px;
+                            transition: background-color 0.2s ease;
+                        }
+                        .block-controls button:hover {
+                            background-color: rgba(255,255,255,0.2);
+                        }
+                        /* Ensure first block has proper spacing */
+                        .block-editable:first-child {
+                            margin-top: 40px;
                         }
                     </style>
                 </head>
@@ -387,6 +448,8 @@
                 let html = `<div class="block-editable" data-block-index="${index}">`;
                 html += `<div class="block-controls">
                     <button onclick="parent.editBlock(${index})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button onclick="parent.moveBlockUp(${index})" title="Move Up" ${index === 0 ? 'style="opacity:0.5"' : ''}><i class="fas fa-arrow-up"></i></button>
+                    <button onclick="parent.moveBlockDown(${index})" title="Move Down" ${index === blocks.length - 1 ? 'style="opacity:0.5"' : ''}><i class="fas fa-arrow-down"></i></button>
                     <button onclick="parent.deleteBlock(${index})" title="Delete"><i class="fas fa-trash"></i></button>
                 </div>`;
                 
@@ -395,13 +458,13 @@
                         const level = content.level || 1;
                         const align = content.align || 'left';
                         const text = content.text || 'Header';
-                        html += `<div class="container py-4"><h${level} class="text-${align}">${text}</h${level}></div>`;
+                        html += `<div class="container py-2"><h${level} class="text-${align}">${text}</h${level}></div>`;
                         break;
                         
                     case 'text':
                         const textAlign = content.align || 'left';
                         const textContent = content.text || 'Text content';
-                        html += `<div class="container py-3"><p class="text-${textAlign}">${textContent}</p></div>`;
+                        html += `<div class="container py-2"><p class="text-${textAlign}">${textContent}</p></div>`;
                         break;
                         
                     case 'image':
@@ -409,14 +472,14 @@
                             const imgAlign = content.align || 'center';
                             const maxWidth = content.maxWidth || '100%';
                             const alt = content.alt || '';
-                            html += `<div class="container py-3 text-${imgAlign}">
+                            html += `<div class="container py-2 text-${imgAlign}">
                                 <img src="${content.src}" alt="${alt}" class="img-fluid" style="max-width: ${maxWidth}">
                             </div>`;
                         } else {
-                            html += `<div class="container py-3 text-center">
-                                <div class="border p-5 text-muted">
-                                    <i class="fas fa-image fa-3x"></i>
-                                    <p>Click to add image</p>
+                            html += `<div class="container py-2 text-center">
+                                <div class="border p-4 text-muted bg-light">
+                                    <i class="fas fa-image fa-2x"></i>
+                                    <p class="mb-0 mt-2">Click to add image</p>
                                 </div>
                             </div>`;
                         }
@@ -427,18 +490,18 @@
                         const btnStyle = content.style || 'primary';
                         const btnText = content.text || 'Button';
                         const btnLink = content.link || '#';
-                        html += `<div class="container py-3 text-${btnAlign}">
+                        html += `<div class="container py-2 text-${btnAlign}">
                             <a href="${btnLink}" class="btn btn-${btnStyle}">${btnText}</a>
                         </div>`;
                         break;
                         
                     case 'spacer':
                         const height = content.height || '50px';
-                        html += `<div style="height: ${height};"></div>`;
+                        html += `<div style="height: ${height};" class="bg-light border-dashed"></div>`;
                         break;
                         
                     default:
-                        html += `<div class="container py-3 text-center text-muted">Unknown block type: ${block.type}</div>`;
+                        html += `<div class="container py-2 text-center text-muted">Unknown block type: ${block.type}</div>`;
                 }
                 
                 html += '</div>';
@@ -472,7 +535,6 @@
         }
 
         function editBlock(index) {
-            // Simple edit functionality - you can enhance this
             const block = pageBlocks[index];
             if (!block) return;
             
@@ -495,6 +557,26 @@
         function deleteBlock(index) {
             if (confirm('Delete this block?')) {
                 pageBlocks.splice(index, 1);
+                renderPreview();
+                setTimeout(savePage, 1000);
+            }
+        }
+
+        function moveBlockUp(index) {
+            if (index > 0) {
+                const temp = pageBlocks[index];
+                pageBlocks[index] = pageBlocks[index - 1];
+                pageBlocks[index - 1] = temp;
+                renderPreview();
+                setTimeout(savePage, 1000);
+            }
+        }
+
+        function moveBlockDown(index) {
+            if (index < pageBlocks.length - 1) {
+                const temp = pageBlocks[index];
+                pageBlocks[index] = pageBlocks[index + 1];
+                pageBlocks[index + 1] = temp;
                 renderPreview();
                 setTimeout(savePage, 1000);
             }
@@ -526,14 +608,34 @@
                     const toolbar = document.querySelector('.toolbar');
                     const successMsg = document.createElement('div');
                     successMsg.className = 'alert alert-success alert-sm d-inline-block ms-3';
-                    successMsg.innerHTML = '<i class="fas fa-check"></i> Saved!';
-                    toolbar.appendChild(successMsg);
                     
-                    setTimeout(() => {
-                        if (toolbar.contains(successMsg)) {
-                            toolbar.removeChild(successMsg);
-                        }
-                    }, 2000);
+                    if (result.warning) {
+                        // Show warning about SFTP issue
+                        successMsg.className = 'alert alert-warning alert-sm d-inline-block ms-3';
+                        successMsg.innerHTML = `
+                            <i class="fas fa-exclamation-triangle"></i> ${result.message}
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="syncToLive()">
+                                <i class="fas fa-sync"></i> Sync Now
+                            </button>
+                        `;
+                        
+                        // Keep warning visible longer
+                        setTimeout(() => {
+                            if (toolbar.contains(successMsg)) {
+                                toolbar.removeChild(successMsg);
+                            }
+                        }, 10000);
+                    } else {
+                        successMsg.innerHTML = '<i class="fas fa-check"></i> Saved & Published!';
+                        
+                        setTimeout(() => {
+                            if (toolbar.contains(successMsg)) {
+                                toolbar.removeChild(successMsg);
+                            }
+                        }, 2000);
+                    }
+                    
+                    toolbar.appendChild(successMsg);
                 } else {
                     console.error('Save failed:', result.message);
                     alert('Failed to save: ' + result.message);
@@ -544,8 +646,39 @@
             }
         }
 
+        async function syncToLive() {
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPage.subdomain}/sync`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    const toolbar = document.querySelector('.toolbar');
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success alert-sm d-inline-block ms-3';
+                    successMsg.innerHTML = '<i class="fas fa-check"></i> Synced to live server!';
+                    toolbar.appendChild(successMsg);
+                    
+                    setTimeout(() => {
+                        if (toolbar.contains(successMsg)) {
+                            toolbar.removeChild(successMsg);
+                        }
+                    }, 3000);
+                } else {
+                    alert('Sync failed: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Sync failed:', error);
+                alert('Failed to sync to live server.');
+            }
+        }
+
         function previewPage() {
-            window.open(`/sites/${currentPage.subdomain}`, '_blank');
+            window.open(`/sites/${currentPage.subdomain}/`, '_blank');
         }
 
         function goToMyPages() {
