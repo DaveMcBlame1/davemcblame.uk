@@ -9,6 +9,11 @@
   <link rel="logo" href="Multigrounds.png" />
   <title>Multigrounds - Create Your Professional Web Presence</title>
   <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
     .hero-section {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -17,12 +22,15 @@
     }
     
     .feature-card {
-      transition: transform 0.3s ease;
+      transition: all 0.3s ease;
       height: 100%;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
     .feature-card:hover {
       transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
     
     .stats-section {
@@ -40,6 +48,77 @@
     .logo-hero {
       max-width: 150px;
       margin-bottom: 30px;
+    }
+    
+    .navbar-brand {
+      font-weight: 600;
+    }
+    
+    .header {
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 1rem 0;
+    }
+    
+    .logo {
+      height: 48px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    
+    .logo:hover {
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transform: translateY(-1px);
+    }
+    
+    .top-links a {
+      font-size: 0.9rem;
+      color: #495057;
+      background: #f8f9fa;
+      padding: 0.5em 1em;
+      border-radius: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid #dee2e6;
+    }
+    
+    .top-links a:hover {
+      background: #e9ecef;
+      color: #212529;
+      text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .card {
+      border: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .btn {
+      border-radius: 25px;
+      font-weight: 500;
+      padding: 0.5rem 1.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .footer {
+      background: white;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      margin-top: 3rem;
     }
   </style>
 </head>

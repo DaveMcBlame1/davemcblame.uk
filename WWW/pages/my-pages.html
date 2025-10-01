@@ -227,8 +227,10 @@
                 const hasContent = page.page_data && JSON.parse(page.page_data).blocks.length > 0;
                 const planColor = {
                     'solo': 'primary',
+                    'starter': 'info',
+                    'expansive': 'warning',
                     'business': 'success', 
-                    'enterprise': 'warning'
+                    'enterprise': 'danger'
                 }[page.plan] || 'primary';
                 
                 const createdDate = new Date(page.created_at).toLocaleDateString();
