@@ -323,17 +323,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             credentials: 'include'
         });
         
-        console.log('Login check response:', await response.clone().json());
         const data = await response.json();
+        console.log('Login check response:', data);
         
         if (data.success && data.logged_in) {
             currentUser = data.user;
             console.log('User already logged in:', currentUser.username);
-            
-            // Update session flag for admin check
-            if (currentUser.is_admin) {
-                session['is_admin'] = true;
-            }
             
             showTicketSection();
         } else {
@@ -349,9 +344,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupFormHandlers() {
     // Only set up handlers if the elements exist
     const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const createTicketForm = document.getElementById('createTicketForm');
+    const registerForm = document.getElementById('register-form'); // Fixed ID
+    const logoutBtn = document.getElementById('logout-btn'); // Fixed ID
+    const ticketForm = document.getElementById('ticket-form'); // Fixed ID
     
     // Login form handler
     if (loginForm) {
@@ -368,38 +363,39 @@ function setupFormHandlers() {
         logoutBtn.addEventListener('click', logout);
     }
     
-    // Create ticket form handler
-    if (createTicketForm) {
-        createTicketForm.addEventListener('submit', handleCreateTicket);
+    // Ticket form handler
+    if (ticketForm) {
+        ticketForm.addEventListener('submit', handleTicketSubmit);
     }
     
     // Navigation handlers - only if elements exist
-    const showRegisterBtn = document.getElementById('showRegister');
-    const showLoginBtn = document.getElementById('showLogin');
-    const showCreateTicketBtn = document.getElementById('showCreateTicket');
-    
-    if (showRegisterBtn) {
-        showRegisterBtn.addEventListener('click', showRegisterSection);
-    }
+    const showLoginBtn = document.getElementById('show-login');
     
     if (showLoginBtn) {
         showLoginBtn.addEventListener('click', showLoginSection);
     }
     
-    if (showCreateTicketBtn) {
-        showCreateTicketBtn.addEventListener('click', () => {
-            const modal = new bootstrap.Modal(document.getElementById('createTicketModal'));
-            modal.show();
-        });
-    }
-    
     console.log('Form handlers set up successfully');
 }
 
-function showAuthForms() {
-    document.getElementById('login-section').style.display = 'block';
-    document.getElementById('register-section').style.display = 'none';
-    document.getElementById('ticket-section').style.display = 'none';
+function showLoginSection() {
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+    const ticketSection = document.getElementById('ticket-section');
+    
+    if (loginSection) loginSection.style.display = 'block';
+    if (registerSection) registerSection.style.display = 'none';
+    if (ticketSection) ticketSection.style.display = 'none';
+}
+
+function showRegisterSection() {
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+    const ticketSection = document.getElementById('ticket-section');
+    
+    if (loginSection) loginSection.style.display = 'none';
+    if (registerSection) registerSection.style.display = 'block';
+    if (ticketSection) ticketSection.style.display = 'none';
 }
 
 function showTicketSection() {
@@ -494,6 +490,7 @@ async function handleRegister(event) {
         
         if (data.success) {
             event.target.reset();
+            showLoginSection(); // Show login after successful registration
         }
     } catch (error) {
         console.error('Registration error:', error);
@@ -534,6 +531,35 @@ async function handleTicketSubmit(event) {
     }
 }
 
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            currentUser = null;
+            console.log('Logged out successfully');
+            
+            // Show login section
+            showLoginSection();
+            
+            // Clear login form
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) loginForm.reset();
+        } else {
+            console.error('Logout failed:', data.message);
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Fallback - still show login section
+        currentUser = null;
+        showLoginSection();
+    }
+}
+
 async function loadTickets() {
     try {
         const response = await fetch(`${API_BASE}/tickets`, {
@@ -568,37 +594,43 @@ function displayAdminTickets(tickets) {
     const activeTickets = tickets.open || [];
     const closedTickets = tickets.closed || [];
     
-    activeCount.textContent = activeTickets.length;
-    closedCount.textContent = closedTickets.length;
+    if (activeCount) activeCount.textContent = activeTickets.length;
+    if (closedCount) closedCount.textContent = closedTickets.length;
     
     // Display active tickets
-    if (activeTickets.length === 0) {
-        activeList.innerHTML = '<p class="text-muted">No active tickets</p>';
-    } else {
-        activeList.innerHTML = activeTickets.map(ticket => createTicketHTML(ticket)).join('');
+    if (activeList) {
+        if (activeTickets.length === 0) {
+            activeList.innerHTML = '<p class="text-muted">No active tickets</p>';
+        } else {
+            activeList.innerHTML = activeTickets.map(ticket => createTicketHTML(ticket)).join('');
+        }
     }
     
     // Display closed tickets
-    if (closedTickets.length === 0) {
-        closedList.innerHTML = '<p class="text-muted">No closed tickets</p>';
-    } else {
-        closedList.innerHTML = closedTickets.map(ticket => createTicketHTML(ticket, true)).join('');
+    if (closedList) {
+        if (closedTickets.length === 0) {
+            closedList.innerHTML = '<p class="text-muted">No closed tickets</p>';
+        } else {
+            closedList.innerHTML = closedTickets.map(ticket => createTicketHTML(ticket, true)).join('');
+        }
     }
 }
 
 function displayUserTickets(tickets) {
     const userList = document.getElementById('user-tickets-list');
     
-    if (tickets.length === 0) {
-        userList.innerHTML = `
-            <div class="text-center py-5">
-                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets yet</h5>
-                <p class="text-muted">Submit your first support ticket using the form above.</p>
-            </div>
-        `;
-    } else {
-        userList.innerHTML = tickets.map(ticket => createTicketHTML(ticket)).join('');
+    if (userList) {
+        if (tickets.length === 0) {
+            userList.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No tickets yet</h5>
+                    <p class="text-muted">Submit your first support ticket using the form above.</p>
+                </div>
+            `;
+        } else {
+            userList.innerHTML = tickets.map(ticket => createTicketHTML(ticket)).join('');
+        }
     }
 }
 
@@ -742,35 +774,6 @@ function createTicket() {
         console.error('Error creating ticket:', error);
         alert('Error creating ticket. Please try again.');
     });
-}
-
-async function logout() {
-    try {
-        const response = await fetch(`${API_BASE}/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            currentUser = null;
-            console.log('Logged out successfully');
-            
-            // Show login section
-            document.getElementById('ticket-section').style.display = 'none';
-            document.getElementById('login-section').style.display = 'block';
-            document.getElementById('register-section').style.display = 'none';
-            
-            // Clear form
-            document.getElementById('loginForm').reset();
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        // Fallback - still show login section
-        currentUser = null;
-        document.getElementById('ticket-section').style.display = 'none';
-        document.getElementById('login-section').style.display = 'block';
-    }
 }
 
 async function updateTicketStatus(ticketId, newStatus) {
