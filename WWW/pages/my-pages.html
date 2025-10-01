@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pages - Multigrounds</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .page-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        
+        .page-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .page-thumbnail {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-thumbnail.has-content {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .page-thumbnail .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .page-card:hover .page-thumbnail .overlay {
+            opacity: 1;
+        }
+        
+        .plan-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/pages/support">
+                <i class="fas fa-globe"></i> Multigrounds
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="user-info">Loading...</span>
+                <a class="nav-link" href="/pages/support">Dashboard</a>
+                <a class="nav-link" href="/pages/billing">Create New</a>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="mb-2">My Pages</h1>
+                <p class="text-muted">Manage and edit your websites</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/pages/billing" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> Create New Page
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-alt fa-2x mb-2"></i>
+                        <h3 id="total-pages" class="mb-0">-</h3>
+                        <small>Total Pages</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-eye fa-2x mb-2"></i>
+                        <h3 id="active-pages" class="mb-0">-</h3>
+                        <small>Active Pages</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar fa-2x mb-2"></i>
+                        <h3 id="this-month" class="mb-0">-</h3>
+                        <small>Created This Month</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pages Grid -->
+        <div id="pages-container">
+            <!-- Loading state -->
+            <div class="text-center py-5" id="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Loading your pages...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = 'https://api.multigrounds.org:10065/api';
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('My Pages dashboard loaded');
+            
+            // Check if user is logged in
+            try {
+                const response = await fetch(`${API_BASE}/check-login`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (!data.success || !data.logged_in) {
+                    alert('Please log in first to view your pages.');
+                    window.location.href = '/pages/support';
+                    return;
+                }
+                
+                currentUser = data.user;
+                document.getElementById('user-info').textContent = `Welcome, ${currentUser.username}`;
+                
+                // Load user's pages
+                await loadUserPages();
+                
+            } catch (error) {
+                console.error('Error checking login:', error);
+                alert('Error checking login status. Please try again.');
+                window.location.href = '/pages/support';
+            }
+        });
+
+        async function loadUserPages() {
+            try {
+                const response = await fetch(`${API_BASE}/my-pages`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayPages(data.pages);
+                    updateStats(data.pages);
+                } else {
+                    showError('Failed to load pages: ' + data.message);
+                }
+                
+            } catch (error) {
+                console.error('Error loading pages:', error);
+                showError('Error loading your pages. Please try again.');
+            }
+        }
+
+        function displayPages(pages) {
+            const container = document.getElementById('pages-container');
+            
+            if (pages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-plus"></i>
+                        <h3>No Pages Yet</h3>
+                        <p class="text-muted mb-4">Create your first website to get started</p>
+                        <a href="/pages/billing" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Create Your First Page
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            const pagesHtml = pages.map(page => {
+                const hasContent = page.page_data && JSON.parse(page.page_data).blocks.length > 0;
+                const planColor = {
+                    'solo': 'primary',
+                    'business': 'success', 
+                    'enterprise': 'warning'
+                }[page.plan] || 'primary';
+                
+                const createdDate = new Date(page.created_at).toLocaleDateString();
+                
+                return `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card page-card" onclick="editPage('${page.subdomain}')">
+                            <div class="page-thumbnail ${hasContent ? 'has-content' : ''}">
+                                <span class="badge bg-${planColor} plan-badge">${page.plan}</span>
+                                <div class="overlay">
+                                    <div class="text-white text-center">
+                                        <i class="fas fa-edit fa-2x mb-2"></i>
+                                        <div>Click to Edit</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title mb-2">${page.title}</h5>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-globe"></i> ${page.subdomain}.multigrounds.org
+                                    </small><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> Created ${createdDate}
+                                    </small>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewPage('${page.subdomain}')">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); editPage('${page.subdomain}')">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                    </div>
+                                    <span class="badge bg-${page.is_active ? 'success' : 'secondary'}">
+                                        ${page.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="row">${pagesHtml}</div>`;
+        }
+
+        function updateStats(pages) {
+            const totalPages = pages.length;
+            const activePages = pages.filter(p => p.is_active).length;
+            
+            // Calculate pages created this month
+            const thisMonth = new Date();
+            thisMonth.setDate(1);
+            thisMonth.setHours(0, 0, 0, 0);
+            
+            const thisMonthPages = pages.filter(p => {
+                const pageDate = new Date(p.created_at);
+                return pageDate >= thisMonth;
+            }).length;
+
+            document.getElementById('total-pages').textContent = totalPages;
+            document.getElementById('active-pages').textContent = activePages;
+            document.getElementById('this-month').textContent = thisMonthPages;
+        }
+
+        function editPage(subdomain) {
+            console.log('Editing page:', subdomain);
+            window.location.href = `/pages/builder.html?page=${subdomain}`;
+        }
+
+        function viewPage(subdomain) {
+            console.log('Viewing page:', subdomain);
+            window.open(`https://api.multigrounds.org/sites/${subdomain}`, '_blank');
+        }
+
+        function showError(message) {
+            const container = document.getElementById('pages-container');
+            container.innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <h4>Oops! Something went wrong</h4>
+                    <p>${message}</p>
+                    <button class="btn btn-outline-danger" onclick="loadUserPages()">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }
+
+        async function logout() {
+            try {
+                await fetch(`${API_BASE}/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/pages/support';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/pages/support';
+            }
+        }
+    </script>
+</body>
+</html>
