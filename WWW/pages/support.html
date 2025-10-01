@@ -90,11 +90,50 @@
         </div>
 
         <!-- Ticket List -->
-        <div class="card">
+        <div id="admin-tickets" style="display: none;">
+          <div class="row">
+            <!-- Active Tickets Column -->
+            <div class="col-lg-8">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0">
+                    <i class="fas fa-exclamation-circle"></i> Active Tickets 
+                    <span id="active-count" class="badge bg-light text-dark">0</span>
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div id="active-tickets-list">
+                    <!-- Active tickets will be loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Closed Tickets Column -->
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0">
+                    <i class="fas fa-check-circle"></i> Closed Tickets 
+                    <span id="closed-count" class="badge bg-light text-dark">0</span>
+                  </h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                  <div id="closed-tickets-list">
+                    <!-- Closed tickets will be loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Tickets (single column for regular users) -->
+        <div id="user-tickets" class="card">
           <div class="card-body">
-            <h4>Tickets</h4>
-            <div id="tickets-list">
-              <!-- Tickets will be loaded here -->
+            <h4>Your Tickets</h4>
+            <div id="user-tickets-list">
+              <!-- User tickets will be loaded here -->
             </div>
           </div>
         </div>
@@ -208,6 +247,197 @@ document.getElementById('ticket-form').onsubmit = async (e) => {
   }
 };
 
+// Update the loadTickets function:
+async function loadTickets() {
+  const res = await fetch(`${API_BASE}/tickets`, { credentials: 'include' });
+  const data = await res.json();
+  
+  if (data.success) {
+    if (isAdmin) {
+      // Show admin view with separate columns
+      document.getElementById('admin-tickets').style.display = 'block';
+      document.getElementById('user-tickets').style.display = 'none';
+      
+      // Load active tickets
+      const activeList = document.getElementById('active-tickets-list');
+      const openTickets = data.tickets.open || [];
+      activeList.innerHTML = '';
+      document.getElementById('active-count').textContent = openTickets.length;
+      
+      if (openTickets.length === 0) {
+        activeList.innerHTML = '<div class="text-muted text-center py-4">No active tickets</div>';
+      } else {
+        openTickets.forEach(ticket => {
+          activeList.appendChild(createTicketElement(ticket, true)); // true for admin view
+        });
+      }
+      
+      // Load closed tickets
+      const closedList = document.getElementById('closed-tickets-list');
+      const closedTickets = data.tickets.closed || [];
+      closedList.innerHTML = '';
+      document.getElementById('closed-count').textContent = closedTickets.length;
+      
+      if (closedTickets.length === 0) {
+        closedList.innerHTML = '<div class="text-muted text-center py-4">No closed tickets</div>';
+      } else {
+        closedTickets.forEach(ticket => {
+          closedList.appendChild(createClosedTicketElement(ticket));
+        });
+      }
+    } else {
+      // Show user view
+      document.getElementById('admin-tickets').style.display = 'none';
+      document.getElementById('user-tickets').style.display = 'block';
+      
+      const userList = document.getElementById('user-tickets-list');
+      const userTickets = data.tickets.user || [];
+      userList.innerHTML = '';
+      
+      if (userTickets.length === 0) {
+        userList.innerHTML = '<div class="text-muted text-center py-4">No tickets submitted yet</div>';
+      } else {
+        userTickets.forEach(ticket => {
+          userList.appendChild(createTicketElement(ticket, false)); // false for user view
+        });
+      }
+    }
+  }
+}
+
+// Create full ticket element for active tickets
+function createTicketElement(ticket, isAdminView) {
+  const div = document.createElement('div');
+  div.className = 'border p-3 mb-3 rounded';
+  
+  const statusColor = ticket.status === 'open' ? 'danger' : 'warning';
+  const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'info';
+  
+  // Priority indicator
+  let priorityIcon = '';
+  if (ticket.priority === 'high') {
+    priorityIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+  } else if (ticket.priority === 'medium') {
+    priorityIcon = '<i class="fas fa-exclamation text-warning"></i>';
+  } else {
+    priorityIcon = '<i class="fas fa-info-circle text-info"></i>';
+  }
+  
+  let statusControls = '';
+  if (isAdminView) {
+    statusControls = `
+      <div class="mt-2">
+        <button class="btn btn-sm btn-warning" onclick="updateTicketStatus(${ticket.id}, 'in-progress')">
+          <i class="fas fa-clock"></i> In Progress
+        </button>
+        <button class="btn btn-sm btn-success" onclick="updateTicketStatus(${ticket.id}, 'closed')">
+          <i class="fas fa-check"></i> Close
+        </button>
+        ${ticket.status !== 'open' ? `<button class="btn btn-sm btn-danger" onclick="updateTicketStatus(${ticket.id}, 'open')">
+          <i class="fas fa-redo"></i> Reopen
+        </button>` : ''}
+      </div>
+    `;
+  }
+  
+  let commentsHtml = '';
+  if (ticket.comments && ticket.comments.length > 0) {
+    commentsHtml = '<div class="mt-3"><h6>Comments:</h6>';
+    ticket.comments.forEach(comment => {
+      const commentClass = comment.is_admin_reply ? 'bg-light border-start border-primary border-3' : 'bg-white border-start border-secondary border-2';
+      const userBadge = comment.is_admin_reply ? '<span class="badge bg-primary">Admin</span>' : '';
+      commentsHtml += `
+        <div class="${commentClass} p-2 mb-2 rounded">
+          <small><strong>${comment.username}</strong> ${userBadge} - ${new Date(comment.created_at).toLocaleString()}</small>
+          <p class="mb-0 mt-1">${comment.content}</p>
+        </div>
+      `;
+    });
+    commentsHtml += '</div>';
+  }
+  
+  // Comment section
+  let commentSection = '';
+  if (ticket.status !== 'closed') {
+    commentSection = `
+      <div class="mt-3">
+        <div class="input-group">
+          <textarea class="form-control" id="comment-${ticket.id}" placeholder="Add a comment..." rows="2"></textarea>
+          <button class="btn btn-outline-primary" onclick="addComment(${ticket.id})">
+            <i class="fas fa-paper-plane"></i> Reply
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    commentSection = `
+      <div class="mt-3">
+        <div class="alert alert-secondary small mb-0">
+          <i class="fas fa-lock"></i> Comments are disabled on closed tickets
+        </div>
+      </div>
+    `;
+  }
+  
+  div.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start">
+      <h5>${priorityIcon} ${ticket.title}</h5>
+      <div>
+        <span class="badge bg-${statusColor}">${ticket.status}</span>
+        <span class="badge bg-${priorityColor}">${ticket.priority}</span>
+      </div>
+    </div>
+    <p>${ticket.description}</p>
+    <small><strong>By:</strong> ${ticket.username} | <strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</small>
+    ${statusControls}
+    ${commentsHtml}
+    ${commentSection}
+  `;
+  
+  return div;
+}
+
+// Create compact ticket element for closed tickets
+function createClosedTicketElement(ticket) {
+  const div = document.createElement('div');
+  div.className = 'border p-2 mb-2 rounded bg-light';
+  
+  const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'info';
+  
+  div.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h6 class="mb-1">${ticket.title}</h6>
+        <small class="text-muted">
+          <strong>${ticket.username}</strong> • 
+          Closed: ${new Date(ticket.updated_at).toLocaleDateString()}
+        </small>
+      </div>
+      <div>
+        <span class="badge bg-success">closed</span>
+        <span class="badge bg-${priorityColor}">${ticket.priority}</span>
+      </div>
+    </div>
+    <div class="mt-2">
+      <button class="btn btn-sm btn-outline-primary" onclick="showTicketDetails(${ticket.id})">
+        <i class="fas fa-eye"></i> View
+      </button>
+      <button class="btn btn-sm btn-outline-danger" onclick="updateTicketStatus(${ticket.id}, 'open')">
+        <i class="fas fa-redo"></i> Reopen
+      </button>
+    </div>
+  `;
+  
+  return div;
+}
+
+// Show full ticket details in modal (for closed tickets)
+async function showTicketDetails(ticketId) {
+  // You can implement a modal here or redirect to a detailed view
+  alert('Ticket details functionality - implement modal or detailed view');
+}
+
+// Update the showTicketSection function
 function showTicketSection() {
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('register-section').style.display = 'none';
@@ -215,121 +445,6 @@ function showTicketSection() {
   
   if (isAdmin) {
     document.getElementById('admin-badge').style.display = 'inline-block';
-  }
-}
-
-async function loadTickets() {
-  const res = await fetch(`${API_BASE}/tickets`, { credentials: 'include' });
-  const data = await res.json();
-  if (data.success) {
-    const list = document.getElementById('tickets-list');
-    list.innerHTML = '';
-    data.tickets.forEach(ticket => {
-      const div = document.createElement('div');
-      div.className = 'border p-3 mb-3 rounded';
-      
-      const statusColor = ticket.status === 'open' ? 'danger' : ticket.status === 'in-progress' ? 'warning' : 'success';
-      const priorityColor = ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'info';
-      
-      let statusControls = '';
-      if (isAdmin) {
-        statusControls = `
-          <div class="mt-2">
-            <button class="btn btn-sm btn-warning" onclick="updateTicketStatus(${ticket.id}, 'in-progress')">Mark In Progress</button>
-            <button class="btn btn-sm btn-success" onclick="updateTicketStatus(${ticket.id}, 'closed')">Close Ticket</button>
-            <button class="btn btn-sm btn-danger" onclick="updateTicketStatus(${ticket.id}, 'open')">Reopen</button>
-          </div>
-        `;
-      }
-      
-      let commentsHtml = '';
-      if (ticket.comments && ticket.comments.length > 0) {
-        commentsHtml = '<div class="mt-3"><h6>Comments:</h6>';
-        ticket.comments.forEach(comment => {
-          const commentClass = comment.is_admin_reply ? 'bg-light border-start border-primary border-3' : 'bg-white border-start border-secondary border-2';
-          const userBadge = comment.is_admin_reply ? '<span class="badge bg-primary">Admin</span>' : '';
-          commentsHtml += `
-            <div class="${commentClass} p-2 mb-2 rounded">
-              <small><strong>${comment.username}</strong> ${userBadge} - ${new Date(comment.created_at).toLocaleString()}</small>
-              <p class="mb-0 mt-1">${comment.content}</p>
-            </div>
-          `;
-        });
-        commentsHtml += '</div>';
-      }
-      
-      // Comment section - only show if ticket is not closed
-      let commentSection = '';
-      if (ticket.status !== 'closed') {
-        commentSection = `
-          <div class="mt-3">
-            <div class="input-group">
-              <textarea class="form-control" id="comment-${ticket.id}" placeholder="Add a comment..." rows="2"></textarea>
-              <button class="btn btn-outline-primary" onclick="addComment(${ticket.id})">Add Comment</button>
-            </div>
-          </div>
-        `;
-      } else {
-        commentSection = `
-          <div class="mt-3">
-            <div class="alert alert-secondary small mb-0">
-              <i class="fas fa-lock"></i> Comments are disabled on closed tickets
-            </div>
-          </div>
-        `;
-      }
-      
-      div.innerHTML = `
-        <div class="d-flex justify-content-between align-items-start">
-          <h5>${ticket.title}</h5>
-          <div>
-            <span class="badge bg-${statusColor}">${ticket.status}</span>
-            <span class="badge bg-${priorityColor}">${ticket.priority}</span>
-          </div>
-        </div>
-        <p>${ticket.description}</p>
-        <small><strong>By:</strong> ${ticket.username} | <strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</small>
-        ${statusControls}
-        ${commentsHtml}
-        ${commentSection}
-      `;
-      list.appendChild(div);
-    });
-  }
-}
-
-async function updateTicketStatus(ticketId, status) {
-  const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ status })
-  });
-  const data = await res.json();
-  if (data.success) {
-    loadTickets();
-  } else {
-    alert(data.message);
-  }
-}
-
-async function addComment(ticketId) {
-  const content = document.getElementById(`comment-${ticketId}`).value.trim();
-  if (!content) return;
-  
-  const res = await fetch(`${API_BASE}/tickets/${ticketId}/comments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ content })
-  });
-  
-  const data = await res.json();
-  if (data.success) {
-    document.getElementById(`comment-${ticketId}`).value = '';
-    loadTickets();
-  } else {
-    alert(data.message); // Will show "Cannot comment on closed tickets"
   }
 }
 </script>

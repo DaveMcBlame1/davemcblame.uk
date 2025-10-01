@@ -128,3 +128,23 @@ footer {
     font-size: 0.8rem;
     color: #791919;
 }
+
+.ticket-priority-high {
+  border-left: 4px solid #dc3545 !important;
+}
+.ticket-priority-medium {
+  border-left: 4px solid #ffc107 !important;
+}
+.ticket-priority-low {
+  border-left: 4px solid #17a2b8 !important;
+}
+
+.closed-tickets-column {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.priority-indicator {
+  font-size: 1.1em;
+  margin-right: 8px;
+}
