@@ -1,9 +1,11 @@
 const API_BASE = 'https://api.multigrounds.org:10065/api';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Get subdomain from URL
-    const subdomain = window.location.pathname.split('/')[1];
-    if (subdomain) {
+    // Get subdomain from URL path
+    const pathParts = window.location.pathname.split('/');
+    const subdomain = pathParts[1]; // multigrounds.org/SUBDOMAIN
+    
+    if (subdomain && subdomain !== 'pages') {
         await loadPageData(subdomain);
     }
 });
@@ -18,7 +20,10 @@ async function loadPageData(subdomain) {
             const data = await response.json();
             if (data.success && data.page.is_owner) {
                 // Show edit button for owner
-                document.getElementById('edit-button').style.display = 'block';
+                const editButton = document.getElementById('edit-button');
+                if (editButton) {
+                    editButton.style.display = 'block';
+                }
             }
         }
     } catch (error) {
@@ -27,5 +32,5 @@ async function loadPageData(subdomain) {
 }
 
 function enterEditMode() {
-    window.location.href = '/pages/builder.html';
+    window.location.href = '/pages/builder';
 }
