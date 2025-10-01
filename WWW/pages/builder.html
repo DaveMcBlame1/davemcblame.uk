@@ -7,299 +7,567 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .builder-sidebar {
-            background: #f8f9fa;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-            border-right: 1px solid #dee2e6;
         }
         
-        .block-item {
-            cursor: grab;
-            transition: transform 0.2s;
+        .builder-container {
+            display: flex;
+            height: 100vh;
         }
         
-        .block-item:hover {
-            transform: translateY(-2px);
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e9ecef;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .preview-area {
-            min-height: 100vh;
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .preview-frame {
+            flex: 1;
+            border: none;
             background: white;
         }
         
-        .editable-block {
-            border: 2px dashed transparent;
-            position: relative;
-            transition: border-color 0.2s;
-        }
-        
-        .editable-block:hover {
-            border-color: #007bff;
-        }
-        
-        .block-controls {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .editable-block:hover .block-controls {
-            opacity: 1;
-        }
-        
-        .drop-zone {
-            min-height: 50px;
-            border: 2px dashed #ccc;
+        #loading {
             display: flex;
-            align-items: center;
             justify-content: center;
-            margin: 10px 0;
-            transition: border-color 0.2s;
+            align-items: center;
+            min-height: 50vh;
         }
         
-        .drop-zone.drag-over {
-            border-color: #007bff;
-            background-color: rgba(0, 123, 255, 0.1);
+        .block-tool {
+            padding: 0.75rem;
+            margin: 0.5rem;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
         
-        .page-item {
-            transition: all 0.2s ease;
+        .block-tool:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .page-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .page-info {
+            background: #e3f2fd;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
         }
         
-        .page-item.border-primary {
-            border-width: 2px !important;
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
         }
         
-        .badge-sm {
-            font-size: 0.7em;
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 builder-sidebar p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4>Page Builder</h4>
-                    <div class="btn-group">
+    <div id="loading">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="mt-3">Loading Page Builder...</h4>
+            <p class="text-muted">Please wait while we initialize your workspace</p>
+        </div>
+    </div>
+
+    <div id="builder" class="builder-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="p-3 border-bottom">
+                <h5><i class="fas fa-tools"></i> Page Builder</h5>
+                <small class="text-muted">Drag and drop elements</small>
+            </div>
+            
+            <div id="page-info" class="page-info">
+                <h6>Page Information</h6>
+                <div><strong>Subdomain:</strong> <span id="current-subdomain"></span></div>
+                <div><strong>Title:</strong> <span id="current-title"></span></div>
+                <div><strong>Status:</strong> <span class="badge bg-success">Active</span></div>
+            </div>
+            
+            <div class="p-3">
+                <h6>Add Elements</h6>
+                
+                <div class="block-tool" onclick="addBlock('header')">
+                    <i class="fas fa-heading"></i>
+                    <strong>Header</strong>
+                    <small class="d-block text-muted">Add a title or heading</small>
+                </div>
+                
+                <div class="block-tool" onclick="addBlock('text')">
+                    <i class="fas fa-paragraph"></i>
+                    <strong>Text</strong>
+                    <small class="d-block text-muted">Add paragraphs or content</small>
+                </div>
+                
+                <div class="block-tool" onclick="addBlock('image')">
+                    <i class="fas fa-image"></i>
+                    <strong>Image</strong>
+                    <small class="d-block text-muted">Add photos or graphics</small>
+                </div>
+                
+                <div class="block-tool" onclick="addBlock('button')">
+                    <i class="fas fa-hand-pointer"></i>
+                    <strong>Button</strong>
+                    <small class="d-block text-muted">Add call-to-action buttons</small>
+                </div>
+                
+                <div class="block-tool" onclick="addBlock('spacer')">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    <strong>Spacer</strong>
+                    <small class="d-block text-muted">Add vertical spacing</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="d-flex align-items-center">
+                    <h6 class="mb-0 me-3">
+                        <i class="fas fa-edit"></i> 
+                        Editing: <span id="editing-page"></span>
+                    </h6>
+                    <div class="btn-group me-3">
+                        <button class="btn btn-outline-primary btn-sm" onclick="previewPage()">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
                         <button class="btn btn-success btn-sm" onclick="savePage()">
                             <i class="fas fa-save"></i> Save
                         </button>
-                        <a href="/pages/my-pages.html" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
                     </div>
                 </div>
                 
-                <!-- Page Settings -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h6>Current Page Settings</h6>
-                        <div class="mb-3">
-                            <label class="form-label">Page Title</label>
-                            <input type="text" id="page-title" class="form-control" placeholder="My Awesome Page">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subdomain</label>
-                            <div class="input-group">
-                                <input type="text" id="page-subdomain" class="form-control" placeholder="mypage">
-                                <span class="input-group-text">.multigrounds.org</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <small id="page-url" class="text-muted">Select a page to edit</small>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary btn-sm" onclick="previewPage()">
-                                <i class="fas fa-eye"></i> Preview
-                            </button>
-                            <a href="/pages/my-pages.html" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-list"></i> My Pages
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Building Blocks -->
-                <div class="card">
-                    <div class="card-body">
-                        <h6>Drag & Drop Blocks</h6>
-                        
-                        <div class="block-item card mb-2" draggable="true" data-block-type="header">
-                            <div class="card-body py-2">
-                                <i class="fas fa-heading text-primary"></i> Header
-                            </div>
-                        </div>
-                        
-                        <div class="block-item card mb-2" draggable="true" data-block-type="text">
-                            <div class="card-body py-2">
-                                <i class="fas fa-paragraph text-success"></i> Text
-                            </div>
-                        </div>
-                        
-                        <div class="block-item card mb-2" draggable="true" data-block-type="image">
-                            <div class="card-body py-2">
-                                <i class="fas fa-image text-warning"></i> Image
-                            </div>
-                        </div>
-                        
-                        <div class="block-item card mb-2" draggable="true" data-block-type="button">
-                            <div class="card-body py-2">
-                                <i class="fas fa-mouse-pointer text-info"></i> Button
-                            </div>
-                        </div>
-                        
-                        <div class="block-item card mb-2" draggable="true" data-block-type="spacer">
-                            <div class="card-body py-2">
-                                <i class="fas fa-arrows-alt-v text-secondary"></i> Spacer
-                            </div>
-                        </div>
-                    </div>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="goToMyPages()">
+                        <i class="fas fa-list"></i> My Pages
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
             </div>
             
-            <!-- Preview Area -->
-            <div class="col-md-9 preview-area p-0">
-                <div class="bg-light p-3 border-bottom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-primary">Preview Mode</span>
-                            <span id="page-url" class="ms-2 text-muted">multigrounds.org/yourpage</span>
-                        </div>
-                        <div>
-                            <button class="btn btn-outline-primary btn-sm" onclick="previewPage()">
-                                <i class="fas fa-eye"></i> Preview
-                            </button>
-                            <button class="btn btn-primary btn-sm" onclick="publishPage()">
-                                <i class="fas fa-globe"></i> Publish
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="canvas" class="p-4">
-                    <div class="drop-zone">
-                        <span class="text-muted">Drag blocks here to start building your page</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Block Editor Modal -->
-    <div class="modal fade" id="blockEditorModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Block</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="block-editor-content">
-                    <!-- Dynamic content based on block type -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveBlockChanges()">Save Changes</button>
-                </div>
-            </div>
+            <!-- Preview Frame -->
+            <iframe id="preview-frame" class="preview-frame" src="about:blank"></iframe>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="builder.js"></script>
     <script>
-// Define API_BASE if not already defined by builder.js
-if (typeof window.API_BASE === 'undefined') {
-    window.API_BASE = 'https://api.multigrounds.org:10065/api';
-}
+        const API_BASE = 'https://api.multigrounds.org:10065/api';
+        let currentUser = null;
+        let currentPage = null;
+        let pageBlocks = [];
+        let isInitialized = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Builder HTML loaded, initializing...');
-    
-    // Use the API_BASE
-    const API_BASE = window.API_BASE;
-    
-    // First check if user is logged in
-    try {
-        console.log('Checking login status...');
-        const response = await fetch(`${API_BASE}/check-login`, {
-            credentials: 'include'
-        });
-        
-        console.log('Login check response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Login check data:', data);
-        
-        if (!data.success || !data.logged_in) {
-            alert('Please log in first to use the page builder.');
-            window.location.href = '/pages/support';
-            return;
-        }
-        
-        // Use existing global variables from builder.js
-        currentUser = data.user;
-        console.log('User logged in:', currentUser.username);
-        
-        // Get page parameter from URL
+        // Get subdomain from URL
         const urlParams = new URLSearchParams(window.location.search);
         const pageSubdomain = urlParams.get('page');
-        
-        if (pageSubdomain) {
-            console.log('Loading page:', pageSubdomain);
-            await loadPageForEditingHTML(pageSubdomain);
-        } else {
-            // No page specified - redirect to My Pages
-            alert('Please select a page to edit from your dashboard.');
-            window.location.href = '/pages/my-pages';
-            return;
+
+        console.log('Builder HTML loaded, initializing...');
+
+        // Single initialization function
+        async function initializeBuilder() {
+            if (isInitialized) {
+                console.log('Builder already initialized, skipping...');
+                return;
+            }
+
+            console.log('Starting builder initialization...');
+            
+            try {
+                // Step 1: Check if user is logged in
+                console.log('Checking login status...');
+                const loginResponse = await fetch(`${API_BASE}/check-login`, {
+                    credentials: 'include'
+                });
+                
+                console.log('Login check response status:', loginResponse.status);
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login check failed: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                console.log('Login check data:', loginData);
+                
+                if (!loginData.success || !loginData.logged_in) {
+                    showError('Please log in to use the page builder.');
+                    setTimeout(() => {
+                        window.location.href = '/pages/support';
+                    }, 2000);
+                    return;
+                }
+                
+                currentUser = loginData.user;
+                console.log('User logged in:', currentUser.username);
+                
+                // Step 2: Load the specific page
+                if (!pageSubdomain) {
+                    showError('No page specified in URL.');
+                    return;
+                }
+                
+                console.log('Loading page:', pageSubdomain);
+                
+                const pageResponse = await fetch(`${API_BASE}/page/${pageSubdomain}`, {
+                    credentials: 'include'
+                });
+                
+                if (!pageResponse.ok) {
+                    throw new Error(`Failed to load page: ${pageResponse.status}`);
+                }
+                
+                const pageData = await pageResponse.json();
+                console.log('Page data loaded:', pageData);
+                
+                if (!pageData.success) {
+                    throw new Error(pageData.message || 'Failed to load page');
+                }
+                
+                if (!pageData.page.is_owner) {
+                    showError('You do not have permission to edit this page.');
+                    return;
+                }
+                
+                currentPage = pageData.page;
+                
+                // Parse page blocks
+                try {
+                    pageBlocks = JSON.parse(currentPage.page_data || '{"blocks": []}').blocks || [];
+                } catch (e) {
+                    console.warn('Failed to parse page data, using empty blocks:', e);
+                    pageBlocks = [];
+                }
+                
+                // Step 3: Initialize the UI
+                initializeUI();
+                renderPreview();
+                
+                isInitialized = true;
+                console.log('Builder initialization complete!');
+                
+            } catch (error) {
+                console.error('Builder initialization failed:', error);
+                showError(`Failed to initialize builder: ${error.message}`);
+            }
         }
-        
-    } catch (error) {
-        console.error('Error checking login:', error);
-        alert('Error checking login status. Please try again.');
-        window.location.href = '/pages/support';
-    }
-});
 
-// Update the updatePageDisplayHTML function to be simpler:
-function updatePageDisplayHTML(page) {
-    // Update page title
-    const titleInput = document.getElementById('page-title');
-    if (titleInput) {
-        titleInput.value = page.title;
-    }
-    
-    // Update subdomain display (disable editing after creation)
-    const subdomainInput = document.getElementById('page-subdomain');
-    if (subdomainInput) {
-        subdomainInput.value = page.subdomain;
-        subdomainInput.disabled = true;
-        subdomainInput.style.backgroundColor = '#e9ecef';
-    }
-    
-    // Update page URL display
-    const urlElement = document.getElementById('page-url');
-    if (urlElement) {
-        urlElement.innerHTML = `<a href="https://api.multigrounds.org/sites/${page.subdomain}" target="_blank" class="text-decoration-none small">
-            <i class="fas fa-external-link-alt"></i> View Live: ${page.subdomain}.multigrounds.org
-        </a>`;
-    }
-}
+        function initializeUI() {
+            // Update page info
+            document.getElementById('current-subdomain').textContent = currentPage.subdomain;
+            document.getElementById('current-title').textContent = currentPage.title;
+            document.getElementById('editing-page').textContent = currentPage.subdomain;
+            
+            // Show builder interface
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('builder').style.display = 'flex';
+        }
 
-// ... keep all other existing functions (loadPageForEditingHTML, showEmptyBuilderHTML, etc.)
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="error-message">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="window.location.href='/pages/support'">
+                        Go to Support
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderPreview() {
+            const blocksHtml = generateBlocksHtml(pageBlocks);
+            
+            const previewHtml = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${currentPage.title}</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                    <style>${currentPage.custom_css || ''}</style>
+                    <style>
+                        .block-editable {
+                            position: relative;
+                            min-height: 30px;
+                            outline: 2px dashed transparent;
+                            transition: outline 0.3s ease;
+                        }
+                        .block-editable:hover {
+                            outline: 2px dashed #007bff;
+                        }
+                        .block-controls {
+                            position: absolute;
+                            top: -35px;
+                            right: 0;
+                            background: #007bff;
+                            padding: 5px;
+                            border-radius: 4px;
+                            opacity: 0;
+                            transition: opacity 0.3s ease;
+                        }
+                        .block-editable:hover .block-controls {
+                            opacity: 1;
+                        }
+                        .block-controls button {
+                            background: none;
+                            border: none;
+                            color: white;
+                            padding: 2px 5px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="page-content">
+                        ${blocksHtml || '<div class="container py-5 text-center"><h1>Start adding elements to your page!</h1><p class="text-muted">Use the tools on the left to add content.</p></div>'}
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const frame = document.getElementById('preview-frame');
+            frame.srcdoc = previewHtml;
+        }
+
+        function generateBlocksHtml(blocks) {
+            if (!blocks || blocks.length === 0) return '';
+            
+            return blocks.map((block, index) => {
+                const content = block.content || {};
+                let html = `<div class="block-editable" data-block-index="${index}">`;
+                html += `<div class="block-controls">
+                    <button onclick="parent.editBlock(${index})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button onclick="parent.deleteBlock(${index})" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>`;
+                
+                switch (block.type) {
+                    case 'header':
+                        const level = content.level || 1;
+                        const align = content.align || 'left';
+                        const text = content.text || 'Header';
+                        html += `<div class="container py-4"><h${level} class="text-${align}">${text}</h${level}></div>`;
+                        break;
+                        
+                    case 'text':
+                        const textAlign = content.align || 'left';
+                        const textContent = content.text || 'Text content';
+                        html += `<div class="container py-3"><p class="text-${textAlign}">${textContent}</p></div>`;
+                        break;
+                        
+                    case 'image':
+                        if (content.src) {
+                            const imgAlign = content.align || 'center';
+                            const maxWidth = content.maxWidth || '100%';
+                            const alt = content.alt || '';
+                            html += `<div class="container py-3 text-${imgAlign}">
+                                <img src="${content.src}" alt="${alt}" class="img-fluid" style="max-width: ${maxWidth}">
+                            </div>`;
+                        } else {
+                            html += `<div class="container py-3 text-center">
+                                <div class="border p-5 text-muted">
+                                    <i class="fas fa-image fa-3x"></i>
+                                    <p>Click to add image</p>
+                                </div>
+                            </div>`;
+                        }
+                        break;
+                        
+                    case 'button':
+                        const btnAlign = content.align || 'center';
+                        const btnStyle = content.style || 'primary';
+                        const btnText = content.text || 'Button';
+                        const btnLink = content.link || '#';
+                        html += `<div class="container py-3 text-${btnAlign}">
+                            <a href="${btnLink}" class="btn btn-${btnStyle}">${btnText}</a>
+                        </div>`;
+                        break;
+                        
+                    case 'spacer':
+                        const height = content.height || '50px';
+                        html += `<div style="height: ${height};"></div>`;
+                        break;
+                        
+                    default:
+                        html += `<div class="container py-3 text-center text-muted">Unknown block type: ${block.type}</div>`;
+                }
+                
+                html += '</div>';
+                return html;
+            }).join('');
+        }
+
+        // Block management functions
+        function addBlock(type) {
+            const newBlock = {
+                type: type,
+                content: getDefaultContent(type)
+            };
+            
+            pageBlocks.push(newBlock);
+            renderPreview();
+            
+            // Auto-save after adding block
+            setTimeout(savePage, 1000);
+        }
+
+        function getDefaultContent(type) {
+            const defaults = {
+                header: { level: 1, align: 'left', text: 'New Header' },
+                text: { align: 'left', text: 'Add your text content here...' },
+                image: { align: 'center', src: '', alt: '', maxWidth: '100%' },
+                button: { align: 'center', style: 'primary', text: 'Click Me', link: '#' },
+                spacer: { height: '50px' }
+            };
+            return defaults[type] || {};
+        }
+
+        function editBlock(index) {
+            // Simple edit functionality - you can enhance this
+            const block = pageBlocks[index];
+            if (!block) return;
+            
+            const newText = prompt(`Edit ${block.type}:`, 
+                block.content.text || block.content.src || block.content.height || '');
+            
+            if (newText !== null) {
+                if (block.type === 'spacer') {
+                    block.content.height = newText;
+                } else if (block.type === 'image') {
+                    block.content.src = newText;
+                } else {
+                    block.content.text = newText;
+                }
+                renderPreview();
+                setTimeout(savePage, 1000);
+            }
+        }
+
+        function deleteBlock(index) {
+            if (confirm('Delete this block?')) {
+                pageBlocks.splice(index, 1);
+                renderPreview();
+                setTimeout(savePage, 1000);
+            }
+        }
+
+        async function savePage() {
+            try {
+                const saveData = {
+                    page_data: JSON.stringify({ blocks: pageBlocks }),
+                    title: currentPage.title
+                };
+                
+                const response = await fetch(`${API_BASE}/page/${currentPage.subdomain}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(saveData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success feedback briefly
+                    const toolbar = document.querySelector('.toolbar');
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success alert-sm d-inline-block ms-3';
+                    successMsg.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                    toolbar.appendChild(successMsg);
+                    
+                    setTimeout(() => {
+                        if (toolbar.contains(successMsg)) {
+                            toolbar.removeChild(successMsg);
+                        }
+                    }, 2000);
+                } else {
+                    alert('Failed to save: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Save failed:', error);
+                alert('Failed to save page. Please try again.');
+            }
+        }
+
+        function previewPage() {
+            window.open(`/sites/${currentPage.subdomain}`, '_blank');
+        }
+
+        function goToMyPages() {
+            window.location.href = '/pages/my-pages';
+        }
+
+        async function logout() {
+            try {
+                await fetch(`${API_BASE}/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/';
+            } catch (error) {
+                window.location.href = '/';
+            }
+        }
+
+        // Initialize when page loads - ONLY ONCE
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting initialization...');
+            initializeBuilder();
+        });
+
+        // Prevent multiple initializations
+        window.addEventListener('load', () => {
+            if (!isInitialized) {
+                console.log('Window loaded, starting initialization as fallback...');
+                initializeBuilder();
+            }
+        });
     </script>
 </body>
 </html>
