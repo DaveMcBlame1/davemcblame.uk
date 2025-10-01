@@ -16,6 +16,12 @@ async function loadUserPage() {
             credentials: 'include'
         });
         
+        if (response.status === 401) {
+            alert('Please log in to access the page builder');
+            window.location.href = '/pages/support';
+            return;
+        }
+        
         if (response.ok) {
             const data = await response.json();
             if (data.success) {
@@ -25,16 +31,21 @@ async function loadUserPage() {
                 document.getElementById('page-url').textContent = `multigrounds.org/${currentPage.subdomain}`;
                 
                 // Load existing blocks
-                pageBlocks = JSON.parse(currentPage.page_data).blocks || [];
+                try {
+                    const pageData = JSON.parse(currentPage.page_data);
+                    pageBlocks = pageData.blocks || [];
+                } catch (e) {
+                    console.error('Error parsing page data:', e);
+                    pageBlocks = [];
+                }
                 renderBlocks();
             }
         } else {
-            // No page exists, user can create one
-            console.log('No existing page found');
+            console.log('No existing page found - user can create one through billing');
         }
     } catch (error) {
         console.error('Error loading page:', error);
-        alert('Please log in to access the page builder');
+        alert('Error loading page data. Please try logging in again.');
         window.location.href = '/pages/support';
     }
 }

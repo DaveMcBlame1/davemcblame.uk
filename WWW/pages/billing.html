@@ -377,29 +377,47 @@
         return;
       }
       
-      // For now, create a free page (you can integrate Stripe later)
+      // Check if subdomain is available first
       try {
-        const response = await fetch(`${API_BASE}/create-page`, {
+        const checkResponse = await fetch(`${API_BASE}/check-subdomain/${subdomain}`, {
+          credentials: 'include'
+        });
+        const checkData = await checkResponse.json();
+        
+        if (!checkData.available) {
+          alert('This subdomain is already taken. Please choose another one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking subdomain:', error);
+        alert('Error checking subdomain availability. Please try again.');
+        return;
+      }
+      
+      // For now, create a placeholder purchase record instead of actual page
+      try {
+        const response = await fetch(`${API_BASE}/create-purchase`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             subdomain: subdomain,
-            title: `${subdomain}'s Page`,
-            plan: selectedPlan.name
+            plan: selectedPlan.name,
+            setupCost: selectedPlan.setupCost,
+            monthlyCost: selectedPlan.monthlyCost
           })
         });
         
         const data = await response.json();
         if (data.success) {
-          alert(`Page created successfully! You can now build it at the page builder.`);
+          alert(`Purchase initiated! Payment integration coming soon. For now, your page "${subdomain}" has been created.`);
           window.location.href = '/pages/builder.html';
         } else {
           alert('Error: ' + data.message);
         }
       } catch (error) {
         console.error('Purchase error:', error);
-        alert('Error creating page. Please try again.');
+        alert('Error processing purchase. Please try again.');
       }
     }
   </script>

@@ -1,4 +1,11 @@
 RewriteEngine On
+
+# Proxy user pages to Flask API (but exclude existing /pages/ routes)
+RewriteCond %{REQUEST_URI} ^/([a-z0-9-]+)/?$ 
+RewriteCond %{REQUEST_URI} !^/(pages|static|css|js|images|indev|errors|ads\.txt|favicon\.ico|robots\.txt|sitemap\.xml)
+RewriteRule ^([a-z0-9-]+)/?$ https://api.multigrounds.org:10065/pages/$1 [P,L]
+
+# Your existing PHP routing
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [QSA,L]
+RewriteRule ^(.*)$ index.php [QSA,L]
