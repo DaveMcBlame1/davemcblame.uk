@@ -495,6 +495,7 @@ function showTicketSection() {
 
 // Check if user is already logged in
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check if user is already logged in
     try {
         const response = await fetch(`${API_BASE}/check-login`, {
             credentials: 'include'
