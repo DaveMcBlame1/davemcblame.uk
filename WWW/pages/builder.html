@@ -183,19 +183,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="builder.js"></script>
     <script>
-// Check if variables are already declared to avoid duplicates
-if (typeof currentUser === 'undefined') {
-    var currentUser = null;
-}
-if (typeof currentPage === 'undefined') {
-    var currentPage = null;
-}
-if (typeof currentSubdomain === 'undefined') {
-    var currentSubdomain = null;
-}
+// DON'T declare variables - they're already declared in builder.js
+// Just use the existing ones
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Builder loaded, initializing...');
+    console.log('Builder HTML loaded, initializing...');
     
     // Use the API_BASE from builder.js
     const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
@@ -213,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
+        // Use existing global variables from builder.js
         currentUser = data.user;
         console.log('User logged in:', currentUser.username);
         
@@ -222,10 +215,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (pageSubdomain) {
             console.log('Loading page:', pageSubdomain);
-            await loadPageForEditing(pageSubdomain);
+            await loadPageForEditingHTML(pageSubdomain);
         } else {
             console.log('No page parameter found, showing default state');
-            showPageSelector();
+            showPageSelectorHTML();
         }
         
     } catch (error) {
@@ -235,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-async function loadPageForEditing(subdomain) {
+async function loadPageForEditingHTML(subdomain) {
     const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     try {
@@ -251,24 +244,25 @@ async function loadPageForEditing(subdomain) {
                 return;
             }
             
+            // Use existing global variables from builder.js
             currentPage = data.page;
             currentSubdomain = subdomain;
             
             console.log('Page loaded successfully:', data.page);
             
             // Update the page info display
-            updatePageDisplay(data.page);
+            updatePageDisplayHTML(data.page);
             
             // Load the page data into the builder
             if (data.page.page_data) {
                 const pageData = JSON.parse(data.page.page_data);
                 if (pageData.blocks && pageData.blocks.length > 0) {
-                    loadBlocksIntoCanvas(pageData.blocks);
+                    loadBlocksIntoCanvasHTML(pageData.blocks);
                 } else {
-                    showEmptyBuilder();
+                    showEmptyBuilderHTML();
                 }
             } else {
-                showEmptyBuilder();
+                showEmptyBuilderHTML();
             }
             
         } else {
@@ -283,7 +277,7 @@ async function loadPageForEditing(subdomain) {
     }
 }
 
-function updatePageDisplay(page) {
+function updatePageDisplayHTML(page) {
     // Update page title
     const titleInput = document.getElementById('page-title');
     if (titleInput) {
@@ -307,7 +301,7 @@ function updatePageDisplay(page) {
     }
 }
 
-function loadBlocksIntoCanvas(blocks) {
+function loadBlocksIntoCanvasHTML(blocks) {
     console.log('Loading blocks into canvas:', blocks);
     
     const canvas = document.getElementById('canvas');
@@ -321,23 +315,23 @@ function loadBlocksIntoCanvas(blocks) {
     
     // Add each block to the canvas
     blocks.forEach((block, index) => {
-        const blockElement = createCanvasBlock(block, index);
+        const blockElement = createCanvasBlockHTML(block, index);
         canvas.appendChild(blockElement);
         
         // Add drop zone after each block
-        const dropZone = createDropZone();
+        const dropZone = createDropZoneHTML();
         canvas.appendChild(dropZone);
     });
     
     // Always end with a drop zone
     if (blocks.length === 0) {
-        const dropZone = createDropZone();
+        const dropZone = createDropZoneHTML();
         dropZone.innerHTML = '<span class="text-muted">Drag blocks here to start building your page</span>';
         canvas.appendChild(dropZone);
     }
 }
 
-function createCanvasBlock(block, index) {
+function createCanvasBlockHTML(block, index) {
     const blockDiv = document.createElement('div');
     blockDiv.className = 'editable-block mb-3 p-3';
     blockDiv.dataset.blockIndex = index;
@@ -350,10 +344,10 @@ function createCanvasBlock(block, index) {
     controls.className = 'block-controls';
     controls.innerHTML = `
         <div class="btn-group btn-group-sm">
-            <button class="btn btn-primary btn-sm" onclick="editBlock(${index})" title="Edit">
+            <button class="btn btn-primary btn-sm" onclick="editBlockHTML(${index})" title="Edit">
                 <i class="fas fa-edit"></i>
             </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteBlock(${index})" title="Delete">
+            <button class="btn btn-danger btn-sm" onclick="deleteBlockHTML(${index})" title="Delete">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -405,14 +399,14 @@ function createCanvasBlock(block, index) {
     return blockDiv;
 }
 
-function createDropZone() {
+function createDropZoneHTML() {
     const dropZone = document.createElement('div');
     dropZone.className = 'drop-zone';
     dropZone.innerHTML = '<span class="text-muted">Drop block here</span>';
     
     // Add drop zone event listeners
-    dropZone.addEventListener('dragover', handleDragOver);
-    dropZone.addEventListener('drop', handleDrop);
+    dropZone.addEventListener('dragover', handleDragOverHTML);
+    dropZone.addEventListener('drop', handleDropHTML);
     dropZone.addEventListener('dragenter', (e) => {
         e.preventDefault();
         dropZone.classList.add('drag-over');
@@ -426,7 +420,7 @@ function createDropZone() {
     return dropZone;
 }
 
-function showEmptyBuilder() {
+function showEmptyBuilderHTML() {
     const canvas = document.getElementById('canvas');
     if (canvas) {
         canvas.innerHTML = `
@@ -436,8 +430,8 @@ function showEmptyBuilder() {
         `;
         
         const dropZone = canvas.querySelector('.drop-zone');
-        dropZone.addEventListener('dragover', handleDragOver);
-        dropZone.addEventListener('drop', handleDrop);
+        dropZone.addEventListener('dragover', handleDragOverHTML);
+        dropZone.addEventListener('drop', handleDropHTML);
         dropZone.addEventListener('dragenter', (e) => {
             e.preventDefault();
             dropZone.classList.add('drag-over');
@@ -450,7 +444,7 @@ function showEmptyBuilder() {
     }
 }
 
-function showPageSelector() {
+function showPageSelectorHTML() {
     const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     fetch(`${API_BASE}/my-pages`, {
@@ -459,7 +453,7 @@ function showPageSelector() {
     .then(response => response.json())
     .then(data => {
         if (data.success && data.pages.length > 0) {
-            showPageSelectorModal(data.pages);
+            showPageSelectorModalHTML(data.pages);
         } else {
             alert('You need to create a page first before using the builder.');
             window.location.href = '/pages/billing';
@@ -472,7 +466,7 @@ function showPageSelector() {
     });
 }
 
-function showPageSelectorModal(pages) {
+function showPageSelectorModalHTML(pages) {
     const modal = document.createElement('div');
     modal.className = 'modal fade';
     modal.innerHTML = `
@@ -505,32 +499,32 @@ function showPageSelectorModal(pages) {
 }
 
 // Drag and Drop functionality
-function handleDragOver(e) {
+function handleDragOverHTML(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
 }
 
-function handleDrop(e) {
+function handleDropHTML(e) {
     e.preventDefault();
     e.currentTarget.classList.remove('drag-over');
     
     const blockType = e.dataTransfer.getData('text/plain');
     if (blockType) {
-        addBlockToCanvas(blockType, e.currentTarget);
+        addBlockToCanvasHTML(blockType, e.currentTarget);
     }
 }
 
-function addBlockToCanvas(blockType, dropZone) {
-    const newBlock = createDefaultBlock(blockType);
-    const blockElement = createCanvasBlock(newBlock, Date.now()); // Use timestamp as temp index
+function addBlockToCanvasHTML(blockType, dropZone) {
+    const newBlock = createDefaultBlockHTML(blockType);
+    const blockElement = createCanvasBlockHTML(newBlock, Date.now()); // Use timestamp as temp index
     
     // Replace drop zone with block + new drop zone
-    const newDropZone = createDropZone();
+    const newDropZone = createDropZoneHTML();
     dropZone.parentNode.insertBefore(blockElement, dropZone);
     dropZone.parentNode.insertBefore(newDropZone, dropZone.nextSibling);
 }
 
-function createDefaultBlock(blockType) {
+function createDefaultBlockHTML(blockType) {
     const defaults = {
         header: {
             type: 'header',
@@ -586,7 +580,7 @@ async function savePage() {
     const API_BASE = window.API_BASE || 'https://api.multigrounds.org:10065/api';
     
     try {
-        const blocks = collectBlocksFromCanvas();
+        const blocks = collectBlocksFromCanvasHTML();
         const title = document.getElementById('page-title').value || currentPage.title;
         
         const response = await fetch(`${API_BASE}/page/${currentSubdomain}`, {
@@ -612,7 +606,7 @@ async function savePage() {
     }
 }
 
-function collectBlocksFromCanvas() {
+function collectBlocksFromCanvasHTML() {
     const blockElements = document.querySelectorAll('#canvas .editable-block');
     const blocks = [];
     
@@ -642,6 +636,41 @@ function publishPage() {
     // For now, just save the page (it's automatically "published")
     savePage();
 }
+
+// Placeholder functions for block editing
+function editBlockHTML(index) {
+    console.log('Edit block:', index);
+    // TODO: Implement block editing modal
+}
+
+function deleteBlockHTML(index) {
+    if (confirm('Are you sure you want to delete this block?')) {
+        const canvas = document.getElementById('canvas');
+        const blocks = canvas.querySelectorAll('.editable-block');
+        if (blocks[index]) {
+            // Remove the block and its associated drop zone
+            const block = blocks[index];
+            const nextElement = block.nextElementSibling;
+            if (nextElement && nextElement.classList.contains('drop-zone')) {
+                nextElement.remove();
+            }
+            block.remove();
+        }
+    }
+}
+
+// Set up drag and drop for sidebar blocks
+document.addEventListener('DOMContentLoaded', () => {
+    const blockItems = document.querySelectorAll('.block-item[draggable="true"]');
+    
+    blockItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            const blockType = e.target.dataset.blockType;
+            e.dataTransfer.setData('text/plain', blockType);
+            e.dataTransfer.effectAllowed = 'copy';
+        });
+    });
+});
     </script>
 </body>
 </html>
