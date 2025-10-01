@@ -251,7 +251,7 @@
                                 <h5 class="card-title mb-2">${page.title}</h5>
                                 <p class="card-text">
                                     <small class="text-muted">
-                                        <i class="fas fa-globe"></i> ${page.subdomain}.multigrounds.org
+                                        <i class="fas fa-globe"></i> multigrounds.org${page.subdomain}
                                     </small><br>
                                     <small class="text-muted">
                                         <i class="fas fa-calendar"></i> Created ${createdDate}
@@ -305,7 +305,7 @@
 
         function viewPage(subdomain) {
             console.log('Viewing page:', subdomain);
-            window.open(`https://api.multigrounds.org/sites/${subdomain}`, '_blank');
+            window.open(`https://api.multigrounds.org/sites/${subdomain}/index.html`, '_blank');
         }
 
         function showError(message) {
