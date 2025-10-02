@@ -310,7 +310,7 @@
         }
       } catch (error) {
         console.error('Error checking login:', error);
-        alert('Please log in first to access your pages.');
+        // On error, redirect to support/login
         window.location.href = '/pages/support';
       }
     }
