@@ -511,7 +511,7 @@ async function proceedToPayment() {
         
         const data = await response.json();
         if (data.success) {
-            alert(`Success! Your site "${subdomain}" has been created.\n\nYou can view it at: https://api.multigrounds.org/sites/${subdomain}\nOr edit it using the page builder.`);
+            alert(`Success! Your site "${subdomain}" has been created.\n\nYou can view it at: https://multigrounds.org/sites/${subdomain}\nOr edit it using the page builder.`);
             
             // Close modal and redirect
             const modal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
