@@ -37,8 +37,8 @@
               <div class="card-body text-center">
                 <h4>Solo</h4>
                 <div class="price-breakdown">
-                  <div class="h5 text-primary mb-1">$10 <small class="text-muted">setup</small></div>
-                  <div class="h5 text-success">$5<small class="text-muted">/month</small></div>
+                  <div class="h5 text-primary mb-1">$8 <small class="text-muted">setup</small></div>
+                  <div class="h5 text-success">$4<small class="text-muted">/month</small></div>
                 </div>
                 <p class="text-muted">Perfect for a single-page portfolio</p>
                 <ul class="list-unstyled text-start">
@@ -48,7 +48,7 @@
                   <li>✅ SSL certificate</li>
                   <li>✅ Basic support</li>
                 </ul>
-                <button class="btn btn-outline-primary btn-lg w-100" onclick="selectPlan('solo', 10, 5)">
+                <button class="btn btn-outline-primary btn-lg w-100" onclick="selectPlan('solo', 8, 4)">
                   Choose Solo
                 </button>
               </div>
@@ -251,8 +251,8 @@
           <div class="text-center mb-4">
             <h4 id="selected-plan-name">Solo Plan</h4>
             <div class="price-breakdown">
-              <div class="h5 text-primary">Setup: $<span id="setup-cost">10</span></div>
-              <div class="h5 text-success">Monthly: $<span id="monthly-cost">5</span></div>
+              <div class="h5 text-primary">Setup: $<span id="setup-cost">8</span></div>
+              <div class="h5 text-success">Monthly: $<span id="monthly-cost">4</span></div>
             </div>
           </div>
           
@@ -270,8 +270,8 @@
               <div class="mb-3">
                 <label class="form-label">Preferred Subdomain</label>
                 <div class="input-group">
+                  <span class="input-group-text">multigrounds.org/sites/</span>
                   <input type="text" id="subdomain-input" class="form-control" placeholder="yourname" required>
-                  <span class="input-group-text">.multigrounds.org</span>
                 </div>
                 <small class="text-muted">Choose your unique web address</small>
               </div>
@@ -307,8 +307,8 @@ let selectedPlan = null;
 const plans = {
     solo: {
         name: 'solo',
-        setupCost: 10,
-        monthlyCost: 5,
+        setupCost: 8,
+        monthlyCost: 4,
         features: ['1 Page', 'Basic Support', 'SSL Certificate']
     },
     starter: {
