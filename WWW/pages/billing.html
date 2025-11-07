@@ -12,12 +12,8 @@
   <header class="header">
     <a href="/"> <img src="../Multigrounds.png" alt="Logo" class="logo"/></a>
     <div class="top-links">
-      <a href="/pages/policy">PRIVACY POLICY</a>
-      <a href="/pages/terms">TERMS OF SERVICE</a>
-      <a href="/pages/billing">Purchase A Page</a>
-      <a href="/pages/signup">Sign Up</a>  <!-- Add this line -->
-      <a href="/pages/support">Support</a>
-      <a href="/pages/my-pages">My Pages</a>
+      <a href="pages/billing">Get Started</a>
+      <a href="pages/my-pages">My Pages</a>
     </div>
   </header>
   
@@ -562,21 +558,52 @@ async function logout() {
   </script>
   
   <footer class="footer">
-    <p><strong>Contact me:</strong> davemcblame@multigrounds.org</p>
-    <span class="version"></span>
-    <script>
-    async function loadVersion() {
-      const vars = await fetch("/globaldata.json")
-        .then(r => r.json())
-        .catch(e => console.error("Error fetching file", e));
-
-      let versionElements = document.querySelectorAll(".version");
-      for (const versionElement of versionElements) {
-        versionElement.innerText = vars.version ?? "Not found";
-      }
-    }
-    loadVersion();
-    </script>
+    <div class="container">
+      <div class="row">
+        <!-- Main Footer Content -->
+        <div class="col-md align-self-center">
+          <div class="row">
+            <div class="col-6 col-md-auto mr-md-3 mt-1">
+              <h6 class="text-bold-600">Company</h6>
+              <ul>
+                <li><a href="/pages/about">About Us</a></li>
+                <li><a href="/pages/billing">Pricing</a></li>
+              </ul>
+            </div>
+            
+            <div class="col-6 col-md-auto mr-md-3 mt-1">
+              <h6 class="text-bold-600">Resources</h6>
+              <ul>
+                <li><a href="/pages/support">Support</a></li>
+              </ul>
+            </div>
+            
+            <div class="col-6 col-md-auto mr-md-3 mt-1">
+              <h6 class="text-bold-600">Legal</h6>
+              <ul>
+                <li><a href="/pages/policy">Privacy Policy</a></li>
+                <li><a href="/pages/terms">Terms of Service</a></li>
+              </ul>
+            </div>
+            
+            <div class="col-6 col-md-auto mr-md-3 mt-1">
+              <h6 class="text-bold-600">Contact</h6>
+              <ul>
+                <li><a href="mailto:davemcblame@multigrounds.org">Email Us</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Copyright Section -->
+        <div class="col-md-auto text-center text-md-right mt-2 mt-md-2">
+          <p class="mb-0">
+            © 2025 Multigrounds<br>
+            <span class="text-muted d-none d-md-inline mt-1">Made in US MO</span>
+          </p>
+        </div>
+      </div>
+    </div>
   </footer>
 </body>
 </html>
