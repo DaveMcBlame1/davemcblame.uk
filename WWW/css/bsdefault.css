@@ -185,6 +185,13 @@ footer, .footer {
     border-left: 4px solid #17a2b8 !important;
 }
 
+.ticket-description-md, .comment-md {
+    word-break: break-word;
+}
+.ticket-description-md p, .comment-md p {
+    margin-bottom: 0.5em;
+}
+
 .closed-tickets-column {
     max-height: 600px;
     overflow-y: auto;
