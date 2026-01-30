@@ -340,8 +340,13 @@ function renderElement(element) {
         div.className = 'canvas-element';
         div.dataset.elementId = element.id;
         
-        // Add controls
-        div.innerHTML = `
+        // Create content div first
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'element-content';
+        div.appendChild(contentDiv);
+        
+        // Add controls and handles
+        const controlsHtml = `
             <div class="element-controls">
                 <button class="element-control-btn" onclick="editElement(${element.id})">
                     <span class="material-symbols-outlined">edit</span>
@@ -359,6 +364,7 @@ function renderElement(element) {
             <div class="resize-handle w"></div>
             <div class="resize-handle e"></div>
         `;
+        div.insertAdjacentHTML('beforeend', controlsHtml);
         
         state.canvas.appendChild(div);
         setupElementInteraction(div, element);
@@ -378,37 +384,43 @@ function renderElement(element) {
         div.classList.remove('locked');
     }
 
-    // Render content based on type
-    let contentDiv = div.querySelector('.element-content');
-    if (!contentDiv) {
-        contentDiv = document.createElement('div');
-        contentDiv.className = 'element-content';
-        div.insertBefore(contentDiv, div.firstChild);
-    }
-
+    // Update content based on type (don't recreate the div)
+    const contentDiv = div.querySelector('.element-content');
+    
     switch (element.type) {
         case 'text':
             contentDiv.className = 'text-element';
-            contentDiv.contentEditable = false;
-            contentDiv.textContent = element.content;
+            if (!contentDiv.isContentEditable) {
+                contentDiv.contentEditable = false;
+            }
+            if (contentDiv.textContent !== element.content && !contentDiv.isContentEditable) {
+                contentDiv.textContent = element.content;
+            }
             Object.assign(contentDiv.style, element.styles);
             break;
         case 'image':
             contentDiv.className = 'image-element';
-            contentDiv.innerHTML = element.content 
-                ? `<img src="${element.content}" alt="Image">` 
-                : '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #999;">No image</div>';
+            if (element.content) {
+                if (!contentDiv.querySelector('img') || contentDiv.querySelector('img').src !== element.content) {
+                    contentDiv.innerHTML = `<img src="${element.content}" alt="Image">`;
+                }
+            } else {
+                contentDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #999;">No image</div>';
+            }
             Object.assign(contentDiv.style, element.styles);
             break;
         case 'rectangle':
         case 'circle':
         case 'line':
             contentDiv.className = 'shape-element';
+            contentDiv.innerHTML = ''; // Clear any content
             Object.assign(contentDiv.style, element.styles);
             break;
         case 'icon':
             contentDiv.className = 'shape-element';
-            contentDiv.innerHTML = `<img src="https://api.iconify.design/mdi/${element.content}.svg" style="width: 100%; height: 100%;">`;
+            if (!contentDiv.querySelector('img') || !contentDiv.querySelector('img').src.includes(element.content)) {
+                contentDiv.innerHTML = `<img src="https://api.iconify.design/mdi/${element.content}.svg" style="width: 100%; height: 100%;">`;
+            }
             break;
     }
 }
@@ -416,6 +428,17 @@ function renderElement(element) {
 // Setup element interaction
 function setupElementInteraction(div, element) {
     const contentDiv = div.querySelector('.element-content');
+    
+    if (!contentDiv) {
+        console.error('Content div not found for element', element.id);
+        return;
+    }
+    
+    // Only add event listeners if not already added
+    if (div.dataset.interactionSetup === 'true') {
+        return;
+    }
+    div.dataset.interactionSetup = 'true';
     
     // Selection
     div.addEventListener('mousedown', (e) => {
@@ -1044,7 +1067,7 @@ async function savePage() {
 }
 
 function previewPage() {
-    window.open(`/sites/${currentPage.subdomain}/`, '_blank');
+    window.open(`https://multigrounds.org/sites/${currentPage.subdomain}/`, '_blank');
 }
 
 function goToMyPages() {
@@ -1053,7 +1076,7 @@ function goToMyPages() {
             return;
         }
     }
-    window.location.href = '/pages/my-pages';
+    window.location.href = 'https://multigrounds.org/pages/my-pages';
 }
 
 async function logout() {
@@ -1068,9 +1091,9 @@ async function logout() {
             method: 'POST',
             credentials: 'include'
         });
-        window.location.href = '/';
+        window.location.href = 'https://multigrounds.org/';
     } catch (error) {
-        window.location.href = '/';
+        window.location.href = 'https://multigrounds.org/';
     }
 }
 
