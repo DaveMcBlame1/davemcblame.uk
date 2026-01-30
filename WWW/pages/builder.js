@@ -288,7 +288,7 @@ function createElement(type, x, y, options = {}) {
         case 'image':
             element.content = options.url || '';
             element.styles = {
-                objectFit: 'contain',
+                objectFit: 'cover',
                 borderRadius: '0px'
             };
             element.width = 300;
@@ -401,33 +401,45 @@ function renderElement(element) {
     switch (element.type) {
         case 'text':
             contentDiv.className = 'text-element';
-            if (!contentDiv.isContentEditable) {
-                contentDiv.contentEditable = false;
-            }
-            if (contentDiv.textContent !== element.content && !contentDiv.isContentEditable) {
-                contentDiv.textContent = element.content;
-            }
-            Object.assign(contentDiv.style, element.styles);
+            contentDiv.contentEditable = false;
+            // Always update text content
+            contentDiv.textContent = element.content;
+            // Apply all styles directly
+            contentDiv.style.fontFamily = element.styles.fontFamily || 'Arial';
+            contentDiv.style.fontSize = element.styles.fontSize || '16px';
+            contentDiv.style.fontWeight = element.styles.fontWeight || 'normal';
+            contentDiv.style.color = element.styles.color || '#000000';
+            contentDiv.style.textAlign = element.styles.textAlign || 'left';
+            contentDiv.style.padding = '8px';
             break;
         case 'image':
             contentDiv.className = 'image-element';
             contentDiv.style.width = '100%';
             contentDiv.style.height = '100%';
+            contentDiv.style.overflow = 'hidden';
+            
             if (element.content) {
+                const objectFit = element.styles.objectFit || 'cover';
+                const borderRadius = element.styles.borderRadius || '0px';
+                
                 if (!contentDiv.querySelector('img') || contentDiv.querySelector('img').src !== element.content) {
-                    contentDiv.innerHTML = `<img src="${element.content}" alt="Image" style="width: 100%; height: 100%; object-fit: ${element.styles.objectFit || 'contain'};">`;
+                    contentDiv.innerHTML = `<img src="${element.content}" alt="Image" style="width: 100%; height: 100%; object-fit: ${objectFit}; display: block;">`;
                 } else {
-                    // Update existing image object-fit
+                    // Update existing image
                     const img = contentDiv.querySelector('img');
                     if (img) {
-                        img.style.objectFit = element.styles.objectFit || 'contain';
+                        img.style.objectFit = objectFit;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.display = 'block';
                     }
+                }
+                
+                if (borderRadius !== '0px') {
+                    contentDiv.style.borderRadius = borderRadius;
                 }
             } else {
                 contentDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #999;">No image</div>';
-            }
-            if (element.styles.borderRadius) {
-                contentDiv.style.borderRadius = element.styles.borderRadius;
             }
             break;
         case 'rectangle':
@@ -698,14 +710,8 @@ function updateSelectedElement() {
     state.selectedElement.styles.fontWeight = document.getElementById('fontWeight').value;
     state.selectedElement.styles.color = document.getElementById('textColor').value;
 
-    // Force immediate re-render
-    const div = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
-    if (div) {
-        const contentDiv = div.querySelector('.element-content');
-        if (contentDiv) {
-            Object.assign(contentDiv.style, state.selectedElement.styles);
-        }
-    }
+    // Force complete re-render of the element
+    renderElement(state.selectedElement);
     
     addToHistory();
     markAsUnsaved();
