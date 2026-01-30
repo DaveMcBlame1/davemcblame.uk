@@ -6,47 +6,509 @@
     <title>Page Builder - Multigrounds</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        /* Layout */
         .builder-container {
             display: flex;
             height: 100vh;
+            width: 100vw;
         }
-        
+
+        /* Left Sidebar */
         .sidebar {
-            width: 300px;
+            width: 280px;
             background: white;
-            border-right: 1px solid #e9ecef;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
             overflow-y: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-section h3 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .element-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .element-item {
+            padding: 16px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: grab;
+            text-align: center;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .element-item:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+            transform: translateY(-2px);
+        }
+
+        .element-item:active {
+            cursor: grabbing;
+        }
+
+        .element-item .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: #007bff;
+        }
+
+        .element-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
         }
         
+        /* Main Content Area */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
-        
+
+        /* Top Toolbar */
         .toolbar {
             background: white;
-            padding: 1rem;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 20px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            gap: 16px;
+            height: 60px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             position: relative;
         }
-        
-        .preview-frame {
-            flex: 1;
-            border: none;
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+            margin-left: auto;
+        }
+
+        .toolbar-btn {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-btn:hover {
+            background: #e9ecef;
+        }
+
+        .toolbar-btn.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #0056b3;
+        }
+
+        .toolbar-input {
+            padding: 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 80px;
+        }
+
+        .toolbar-select {
+            padding: 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
             background: white;
+            cursor: pointer;
+        }
+
+        .color-picker-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-picker-btn input[type="color"] {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Canvas Area */
+        .canvas-wrapper {
+            flex: 1;
+            overflow: auto;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .canvas {
+            background: white;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            position: relative;
+            min-width: 800px;
+            min-height: 600px;
+        }
+
+        .canvas.grid {
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Canvas Elements */
+        .canvas-element {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+        }
+
+        .canvas-element.selected {
+            outline: 2px solid #007bff;
+        }
+
+        .canvas-element.locked {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .canvas-element.dragging {
+            pointer-events: none;
+        }
+
+        /* Element Controls Overlay */
+        .element-controls {
+            position: absolute;
+            top: -32px;
+            right: 0;
+            display: none;
+            background: #007bff;
+            border-radius: 6px;
+            padding: 4px;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .canvas-element.selected .element-controls {
+            display: flex;
+        }
+
+        .element-control-btn {
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .element-control-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .element-control-btn .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #007bff;
+            border: 1px solid white;
+            border-radius: 50%;
+            display: none;
+        }
+
+        .canvas-element.selected .resize-handle {
+            display: block;
+        }
+
+        .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+        .resize-handle.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .resize-handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .resize-handle.w { top: 50%; left: -4px; transform: translateY(-50%); cursor: w-resize; }
+        .resize-handle.e { top: 50%; right: -4px; transform: translateY(-50%); cursor: e-resize; }
+
+        /* Text Element */
+        .text-element {
+            padding: 8px;
+            outline: none;
+            min-width: 100px;
+            min-height: 30px;
+        }
+
+        .text-element[contenteditable="true"] {
+            background: rgba(0,123,255,0.05);
+        }
+
+        /* Image Element */
+        .image-element img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        /* Shape Element */
+        .shape-element {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Custom Context Menu */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            z-index: 10000;
+            display: none;
+            min-width: 200px;
+        }
+
+        .context-menu.show {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .context-menu-item:hover {
+            background: #f8f9fa;
+        }
+
+        .context-menu-item .material-symbols-outlined {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 8px 0;
+        }
+
+        /* Icon Browser */
+        .icon-browser {
+            margin-top: 12px;
+        }
+
+        .icon-search {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .icon-option {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .icon-option:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+        }
+
+        .icon-option img {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .modal-btn.primary:hover {
+            background: #0056b3;
+        }
+
+        .modal-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .error-text {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 4px;
         }
         
         #loading {
@@ -54,22 +516,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-        }
-        
-        .block-tool {
-            padding: 0.75rem;
-            margin: 0.5rem;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .block-tool:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
         .page-info {
@@ -87,61 +533,6 @@
             margin: 1rem;
             border-radius: 8px;
             border-left: 4px solid #f44336;
-        }
-        
-        .success-message {
-            background: #e8f5e8;
-            color: #2e7d32;
-            padding: 1rem;
-            margin: 1rem;
-            border-radius: 8px;
-            border-left: 4px solid #4caf50;
-        }
-
-        .block-editable {
-            position: relative;
-            min-height: 50px;
-            margin: 10px 0;
-            padding: 10px;
-            outline: 2px dashed transparent;
-            transition: outline 0.3s ease;
-        }
-        .block-editable:hover {
-            outline: 2px dashed #007bff;
-            background-color: rgba(0, 123, 255, 0.05);
-        }
-        .block-controls {
-            position: absolute;
-            top: -40px;
-            right: 5px;
-            background: #007bff;
-            padding: 5px 8px;
-            border-radius: 4px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        .block-editable:hover .block-controls {
-            opacity: 1;
-        }
-        .block-controls button {
-            background: none;
-            border: none;
-            color: white;
-            padding: 4px 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin: 0 2px;
-            border-radius: 3px;
-            transition: background-color 0.2s ease;
-        }
-        .block-controls button:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-        /* Ensure first block has proper spacing */
-        .block-editable:first-child {
-            margin-top: 40px;
         }
 
         /* Compact save notification */
@@ -193,9 +584,9 @@
     <div id="builder" class="builder-container" style="display: none;">
         <!-- Sidebar -->
         <div class="sidebar">
-            <div class="p-3 border-bottom">
-                <h5><i class="fas fa-tools"></i> Page Builder</h5>
-                <small class="text-muted">Drag and drop elements</small>
+            <div class="sidebar-header">
+                <h2><i class="fas fa-tools"></i> Page Builder</h2>
+                <p style="font-size: 12px; color: #666;">Drag elements to canvas</p>
             </div>
             
             <div id="page-info" class="page-info">
@@ -204,39 +595,61 @@
                 <div><strong>Title:</strong> <span id="current-title"></span></div>
                 <div><strong>Status:</strong> <span class="badge bg-success">Active</span></div>
             </div>
-            
-            <div class="p-3">
-                <h6>Add Elements</h6>
-                
-                <div class="block-tool" onclick="addBlock('header')">
-                    <i class="fas fa-heading"></i>
-                    <strong>Header</strong>
-                    <small class="d-block text-muted">Add a title or heading</small>
+
+            <!-- Elements Section -->
+            <div class="sidebar-section">
+                <h3>Elements</h3>
+                <div class="element-grid">
+                    <div class="element-item" draggable="true" data-type="text">
+                        <div class="icon material-symbols-outlined">text_fields</div>
+                        <div class="label">Text</div>
+                    </div>
+                    <div class="element-item" draggable="true" data-type="image">
+                        <div class="icon material-symbols-outlined">image</div>
+                        <div class="label">Image</div>
+                    </div>
+                    <div class="element-item" draggable="true" data-type="rectangle">
+                        <div class="icon material-symbols-outlined">crop_square</div>
+                        <div class="label">Rectangle</div>
+                    </div>
+                    <div class="element-item" draggable="true" data-type="circle">
+                        <div class="icon material-symbols-outlined">circle</div>
+                        <div class="label">Circle</div>
+                    </div>
+                    <div class="element-item" draggable="true" data-type="line">
+                        <div class="icon material-symbols-outlined">remove</div>
+                        <div class="label">Line</div>
+                    </div>
+                    <div class="element-item" draggable="true" data-type="icon">
+                        <div class="icon material-symbols-outlined">star</div>
+                        <div class="label">Icon</div>
+                    </div>
                 </div>
-                
-                <div class="block-tool" onclick="addBlock('text')">
-                    <i class="fas fa-paragraph"></i>
-                    <strong>Text</strong>
-                    <small class="d-block text-muted">Add paragraphs or content</small>
+            </div>
+
+            <!-- Icon Browser -->
+            <div class="sidebar-section">
+                <h3>Popular Icons</h3>
+                <div class="icon-browser">
+                    <input type="text" class="icon-search" placeholder="Search icons..." id="iconSearch">
+                    <div class="icon-grid" id="iconGrid">
+                        <!-- Popular icons will be loaded here -->
+                    </div>
                 </div>
-                
-                <div class="block-tool" onclick="addBlock('image')">
-                    <i class="fas fa-image"></i>
-                    <strong>Image</strong>
-                    <small class="d-block text-muted">Add photos or graphics</small>
+            </div>
+
+            <!-- Page Background -->
+            <div class="sidebar-section">
+                <h3>Page Background</h3>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 13px; flex: 1;">Color:</label>
+                    <div class="color-picker-btn">
+                        <input type="color" id="bgColor" value="#ffffff">
+                    </div>
                 </div>
-                
-                <div class="block-tool" onclick="addBlock('button')">
-                    <i class="fas fa-hand-pointer"></i>
-                    <strong>Button</strong>
-                    <small class="d-block text-muted">Add call-to-action buttons</small>
-                </div>
-                
-                <div class="block-tool" onclick="addBlock('spacer')">
-                    <i class="fas fa-arrows-alt-v"></i>
-                    <strong>Spacer</strong>
-                    <small class="d-block text-muted">Add vertical spacing</small>
-                </div>
+                <label class="modal-label">Background Image URL:</label>
+                <input type="text" class="modal-input" id="bgImageUrl" placeholder="https://...">
+                <button class="toolbar-btn" onclick="applyBackground()" style="width: 100%; justify-content: center;">Apply Background</button>
             </div>
         </div>
         
@@ -244,29 +657,87 @@
         <div class="main-content">
             <!-- Toolbar -->
             <div class="toolbar">
-                <div class="d-flex align-items-center">
-                    <h6 class="mb-0 me-3">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="undo()">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">undo</span>
+                        Undo
+                    </button>
+                    <button class="toolbar-btn" onclick="redo()">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">redo</span>
+                        Redo
+                    </button>
+                </div>
+
+                <div class="toolbar-group" id="textControls" style="display: none;">
+                    <select class="toolbar-select" id="fontFamily" onchange="updateSelectedElement()">
+                        <option value="Arial">Arial</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                    </select>
+                    <input type="number" class="toolbar-input" id="fontSize" placeholder="Size" min="8" max="200" onchange="updateSelectedElement()">
+                    <select class="toolbar-select" id="fontWeight" onchange="updateSelectedElement()">
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                        <option value="600">Semi-Bold</option>
+                        <option value="300">Light</option>
+                    </select>
+                    <div class="color-picker-btn">
+                        <input type="color" id="textColor" onchange="updateSelectedElement()">
+                    </div>
+                </div>
+
+                <div class="toolbar-group" id="alignControls" style="display: none;">
+                    <button class="toolbar-btn" onclick="alignElement('left')" title="Align Left">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">format_align_left</span>
+                    </button>
+                    <button class="toolbar-btn" onclick="alignElement('center')" title="Center Horizontally">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">format_align_center</span>
+                    </button>
+                    <button class="toolbar-btn" onclick="alignElement('right')" title="Align Right">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">format_align_right</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-group" id="layerControls" style="display: none;">
+                    <button class="toolbar-btn" onclick="bringForward()" title="Bring Forward">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">flip_to_front</span>
+                    </button>
+                    <button class="toolbar-btn" onclick="sendBackward()" title="Send Backward">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">flip_to_back</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-group">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="gridToggle" onchange="toggleGrid()">
+                        Grid
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="snapToggle" checked>
+                        Snap
+                    </label>
+                </div>
+
+                <div class="toolbar-group">
+                    <h6 class="mb-0 me-3" style="font-size: 14px;">
                         <i class="fas fa-edit"></i> 
                         Editing: <span id="editing-page"></span>
                         <span id="unsaved-indicator" class="unsaved-indicator" style="display: none;">
-                            <i class="fas fa-circle"></i> Unsaved changes
+                            <i class="fas fa-circle"></i> Unsaved
                         </span>
                     </h6>
-                    <div class="btn-group me-3">
-                        <button class="btn btn-outline-primary btn-sm" onclick="previewPage()">
-                            <i class="fas fa-eye"></i> Preview
-                        </button>
-                        <button id="save-btn" class="btn btn-success btn-sm" onclick="savePage()">
-                            <i class="fas fa-save"></i> Save
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="goToMyPages()">
+                    <button class="toolbar-btn" onclick="previewPage()">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <button id="save-btn" class="toolbar-btn primary" onclick="savePage()">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button class="toolbar-btn" onclick="goToMyPages()">
                         <i class="fas fa-list"></i> My Pages
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                    <button class="toolbar-btn" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
@@ -278,513 +749,97 @@
                 </div>
             </div>
             
-            <!-- Preview Frame -->
-            <iframe id="preview-frame" class="preview-frame" src="about:blank"></iframe>
+            <!-- Canvas -->
+            <div class="canvas-wrapper">
+                <div class="canvas" id="canvas">
+                    <!-- Elements will be added here -->
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        const API_BASE = 'https://api.multigrounds.org/api';
-        let currentUser = null;
-        let currentPage = null;
-        let pageBlocks = [];
-        let isInitialized = false;
-        let isInitializing = false;
-        let hasUnsavedChanges = false;
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" onclick="copyElement()">
+            <span class="material-symbols-outlined">content_copy</span>
+            <span>Copy</span>
+        </div>
+        <div class="context-menu-item" onclick="editElement()">
+            <span class="material-symbols-outlined">edit</span>
+            <span>Edit</span>
+        </div>
+        <div class="context-menu-item" onclick="duplicateElement()">
+            <span class="material-symbols-outlined">control_point_duplicate</span>
+            <span>Duplicate</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="bringForward()">
+            <span class="material-symbols-outlined">flip_to_front</span>
+            <span>Bring Forward</span>
+        </div>
+        <div class="context-menu-item" onclick="sendBackward()">
+            <span class="material-symbols-outlined">flip_to_back</span>
+            <span>Send Backward</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="centerHorizontally()">
+            <span class="material-symbols-outlined">horizontal_distribute</span>
+            <span>Center Horizontally</span>
+        </div>
+        <div class="context-menu-item" onclick="centerVertically()">
+            <span class="material-symbols-outlined">vertical_distribute</span>
+            <span>Center Vertically</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="toggleLock()">
+            <span class="material-symbols-outlined">lock</span>
+            <span id="lockText">Lock</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="deleteElement()" style="color: #dc3545;">
+            <span class="material-symbols-outlined">delete</span>
+            <span>Delete</span>
+        </div>
+    </div>
 
-        // Get subdomain from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const pageSubdomain = urlParams.get('page');
+    <!-- Image URL Modal -->
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Image</h3>
+            </div>
+            <div class="modal-body">
+                <label class="modal-label">Image URL (HTTPS only)</label>
+                <input type="text" class="modal-input" id="imageUrl" placeholder="https://example.com/image.jpg">
+                <div class="error-text" id="imageError" style="display: none;">Please enter a valid HTTPS URL</div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeImageModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="addImageFromModal()">Add Image</button>
+            </div>
+        </div>
+    </div>
 
-        console.log('Builder HTML loaded, initializing...');
-
-        // Single initialization function
-        async function initializeBuilder() {
-            // Prevent multiple concurrent initializations
-            if (isInitialized || isInitializing) {
-                console.log('Builder already initialized or initializing, skipping...');
-                return;
-            }
-
-            isInitializing = true;
-            console.log('Starting builder initialization...');
-            
-            try {
-                // Step 1: Check if user is logged in
-                console.log('Checking login status...');
-                const loginResponse = await fetch(`${API_BASE}/check-login`, {
-                    credentials: 'include'
-                });
-                
-                console.log('Login check response status:', loginResponse.status);
-                
-                if (!loginResponse.ok) {
-                    throw new Error(`Login check failed: ${loginResponse.status}`);
-                }
-                
-                const loginData = await loginResponse.json();
-                console.log('Login check data:', loginData);
-                
-                if (!loginData.success || !loginData.logged_in) {
-                    showError('Please log in to use the page builder.');
-                    setTimeout(() => {
-                        window.location.href = '/pages/support';
-                    }, 2000);
-                    return;
-                }
-                
-                currentUser = loginData.user;
-                console.log('User logged in:', currentUser.username);
-                
-                // Step 2: Load the specific page
-                if (!pageSubdomain) {
-                    showError('No page specified in URL.');
-                    return;
-                }
-                
-                console.log('Loading page:', pageSubdomain);
-                
-                const pageResponse = await fetch(`${API_BASE}/page/${pageSubdomain}`, {
-                    credentials: 'include'
-                });
-                
-                if (!pageResponse.ok) {
-                    throw new Error(`Failed to load page: ${pageResponse.status}`);
-                }
-                
-                const pageData = await pageResponse.json();
-                console.log('Page data loaded:', pageData);
-                
-                if (!pageData.success) {
-                    throw new Error(pageData.message || 'Failed to load page');
-                }
-                
-                if (!pageData.page.is_owner) {
-                    showError('You do not have permission to edit this page.');
-                    return;
-                }
-                
-                currentPage = pageData.page;
-                
-                // Parse page blocks
-                try {
-                    pageBlocks = JSON.parse(currentPage.page_data || '{"blocks": []}').blocks || [];
-                } catch (e) {
-                    console.warn('Failed to parse page data, using empty blocks:', e);
-                    pageBlocks = [];
-                }
-                
-                // Step 3: Initialize the UI
-                initializeUI();
-                renderPreview();
-                
-                isInitialized = true;
-                console.log('Builder initialization complete!');
-                
-            } catch (error) {
-                console.error('Builder initialization failed:', error);
-                showError(`Failed to initialize builder: ${error.message}`);
-            } finally {
-                isInitializing = false;
-            }
-        }
-
-        function initializeUI() {
-            // Update page info
-            document.getElementById('current-subdomain').textContent = currentPage.subdomain;
-            document.getElementById('current-title').textContent = currentPage.title;
-            document.getElementById('editing-page').textContent = currentPage.subdomain;
-            
-            // Show builder interface
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('builder').style.display = 'flex';
-        }
-
-        function showError(message) {
-            document.getElementById('loading').innerHTML = `
-                <div class="error-message">
-                    <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
-                    <p>${message}</p>
-                    <button class="btn btn-primary" onclick="window.location.href='/pages/support'">
-                        Go to Support
-                    </button>
+    <!-- Icon Modal -->
+    <div class="modal" id="iconModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Icon</h3>
+            </div>
+            <div class="modal-body">
+                <label class="modal-label">Icon Name (e.g., heart, star, home)</label>
+                <input type="text" class="modal-input" id="iconName" placeholder="star">
+                <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                    Using Iconify API. Try: heart, star, home, settings, user, etc.
                 </div>
-            `;
-        }
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeIconModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="addIconFromModal()">Add Icon</button>
+            </div>
+        </div>
+    </div>
 
-        function markAsUnsaved() {
-            hasUnsavedChanges = true;
-            document.getElementById('unsaved-indicator').style.display = 'inline';
-            document.getElementById('save-btn').classList.remove('btn-success');
-            document.getElementById('save-btn').classList.add('btn-warning');
-        }
-
-        function markAsSaved() {
-            hasUnsavedChanges = false;
-            document.getElementById('unsaved-indicator').style.display = 'none';
-            document.getElementById('save-btn').classList.remove('btn-warning');
-            document.getElementById('save-btn').classList.add('btn-success');
-        }
-
-        function showSaveNotification(message, isWarning = false) {
-            const notification = document.getElementById('save-notification');
-            const messageSpan = document.getElementById('save-message');
-            
-            messageSpan.textContent = message;
-            
-            if (isWarning) {
-                notification.classList.add('warning');
-                notification.innerHTML = `
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>${message}</span>
-                    <button class="btn btn-sm btn-link text-dark p-0 ms-2" onclick="syncToLive()" style="text-decoration: none;">
-                        <i class="fas fa-sync" style="font-size: 10px;"></i>
-                    </button>
-                `;
-            } else {
-                notification.classList.remove('warning');
-                notification.innerHTML = `
-                    <i class="fas fa-check"></i>
-                    <span>${message}</span>
-                `;
-            }
-            
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, isWarning ? 5000 : 2000);
-        }
-
-        function renderPreview() {
-            const blocksHtml = generateBlocksHtml(pageBlocks);
-            
-            const previewHtml = `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>${currentPage.title}</title>
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-                    <style>${currentPage.custom_css || ''}</style>
-                    <style>
-                        .block-editable {
-                            position: relative;
-                            min-height: 50px;
-                            margin: 10px 0;
-                            padding: 10px;
-                            outline: 2px dashed transparent;
-                            transition: outline 0.3s ease;
-                        }
-                        .block-editable:hover {
-                            outline: 2px dashed #007bff;
-                            background-color: rgba(0, 123, 255, 0.05);
-                        }
-                        .block-controls {
-                            position: absolute;
-                            top: -40px;
-                            right: 5px;
-                            background: #007bff;
-                            padding: 5px 8px;
-                            border-radius: 4px;
-                            opacity: 0;
-                            transition: opacity 0.3s ease;
-                            z-index: 1000;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                        }
-                        .block-editable:hover .block-controls {
-                            opacity: 1;
-                        }
-                        .block-controls button {
-                            background: none;
-                            border: none;
-                            color: white;
-                            padding: 4px 6px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            margin: 0 2px;
-                            border-radius: 3px;
-                            transition: background-color 0.2s ease;
-                        }
-                        .block-controls button:hover {
-                            background-color: rgba(255,255,255,0.2);
-                        }
-                        /* Ensure first block has proper spacing */
-                        .block-editable:first-child {
-                            margin-top: 40px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div id="page-content">
-                        ${blocksHtml || '<div class="container py-5 text-center"><h1>Start adding elements to your page!</h1><p class="text-muted">Use the tools on the left to add content.</p></div>'}
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            const frame = document.getElementById('preview-frame');
-            frame.srcdoc = previewHtml;
-        }
-
-        function generateBlocksHtml(blocks) {
-            if (!blocks || blocks.length === 0) return '';
-            
-            return blocks.map((block, index) => {
-                const content = block.content || {};
-                let html = `<div class="block-editable" data-block-index="${index}">`;
-                html += `<div class="block-controls">
-                    <button onclick="parent.editBlock(${index})" title="Edit"><i class="fas fa-edit"></i></button>
-                    <button onclick="parent.moveBlockUp(${index})" title="Move Up" ${index === 0 ? 'style="opacity:0.5"' : ''}><i class="fas fa-arrow-up"></i></button>
-                    <button onclick="parent.moveBlockDown(${index})" title="Move Down" ${index === blocks.length - 1 ? 'style="opacity:0.5"' : ''}><i class="fas fa-arrow-down"></i></button>
-                    <button onclick="parent.deleteBlock(${index})" title="Delete"><i class="fas fa-trash"></i></button>
-                </div>`;
-                
-                switch (block.type) {
-                    case 'header':
-                        const level = content.level || 1;
-                        const align = content.align || 'left';
-                        const text = content.text || 'Header';
-                        html += `<div class="container py-2"><h${level} class="text-${align}">${text}</h${level}></div>`;
-                        break;
-                        
-                    case 'text':
-                        const textAlign = content.align || 'left';
-                        const textContent = content.text || 'Text content';
-                        html += `<div class="container py-2"><p class="text-${textAlign}">${textContent}</p></div>`;
-                        break;
-                        
-                    case 'image':
-                        if (content.src) {
-                            const imgAlign = content.align || 'center';
-                            const maxWidth = content.maxWidth || '100%';
-                            const alt = content.alt || '';
-                            html += `<div class="container py-2 text-${imgAlign}">
-                                <img src="${content.src}" alt="${alt}" class="img-fluid" style="max-width: ${maxWidth}">
-                            </div>`;
-                        } else {
-                            html += `<div class="container py-2 text-center">
-                                <div class="border p-4 text-muted bg-light">
-                                    <i class="fas fa-image fa-2x"></i>
-                                    <p class="mb-0 mt-2">Click to add image</p>
-                                </div>
-                            </div>`;
-                        }
-                        break;
-                        
-                    case 'button':
-                        const btnAlign = content.align || 'center';
-                        const btnStyle = content.style || 'primary';
-                        const btnText = content.text || 'Button';
-                        const btnLink = content.link || '#';
-                        html += `<div class="container py-2 text-${btnAlign}">
-                            <a href="${btnLink}" class="btn btn-${btnStyle}">${btnText}</a>
-                        </div>`;
-                        break;
-                        
-                    case 'spacer':
-                        const height = content.height || '50px';
-                        html += `<div style="height: ${height};" class="bg-light border-dashed"></div>`;
-                        break;
-                        
-                    default:
-                        html += `<div class="container py-2 text-center text-muted">Unknown block type: ${block.type}</div>`;
-                }
-                
-                html += '</div>';
-                return html;
-            }).join('');
-        }
-
-        // Block management functions
-        function addBlock(type) {
-            const newBlock = {
-                type: type,
-                content: getDefaultContent(type)
-            };
-            
-            pageBlocks.push(newBlock);
-            renderPreview();
-            markAsUnsaved();
-        }
-
-        function getDefaultContent(type) {
-            const defaults = {
-                header: { level: 1, align: 'left', text: 'New Header' },
-                text: { align: 'left', text: 'Add your text content here...' },
-                image: { align: 'center', src: '', alt: '', maxWidth: '100%' },
-                button: { align: 'center', style: 'primary', text: 'Click Me', link: '#' },
-                spacer: { height: '50px' }
-            };
-            return defaults[type] || {};
-        }
-
-        function editBlock(index) {
-            const block = pageBlocks[index];
-            if (!block) return;
-            
-            const newText = prompt(`Edit ${block.type}:`, 
-                block.content.text || block.content.src || block.content.height || '');
-            
-            if (newText !== null) {
-                if (block.type === 'spacer') {
-                    block.content.height = newText;
-                } else if (block.type === 'image') {
-                    block.content.src = newText;
-                } else {
-                    block.content.text = newText;
-                }
-                renderPreview();
-                markAsUnsaved();
-            }
-        }
-
-        function deleteBlock(index) {
-            if (confirm('Delete this block?')) {
-                pageBlocks.splice(index, 1);
-                renderPreview();
-                markAsUnsaved();
-            }
-        }
-
-        function moveBlockUp(index) {
-            if (index > 0) {
-                const temp = pageBlocks[index];
-                pageBlocks[index] = pageBlocks[index - 1];
-                pageBlocks[index - 1] = temp;
-                renderPreview();
-                markAsUnsaved();
-            }
-        }
-
-        function moveBlockDown(index) {
-            if (index < pageBlocks.length - 1) {
-                const temp = pageBlocks[index];
-                pageBlocks[index] = pageBlocks[index + 1];
-                pageBlocks[index + 1] = temp;
-                renderPreview();
-                markAsUnsaved();
-            }
-        }
-
-        async function savePage() {
-            try {
-                console.log('Saving page...', currentPage.subdomain);
-                
-                // Disable save button during save
-                const saveBtn = document.getElementById('save-btn');
-                const originalHtml = saveBtn.innerHTML;
-                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-                saveBtn.disabled = true;
-                
-                const saveData = {
-                    page_data: JSON.stringify({ blocks: pageBlocks }),
-                    title: currentPage.title
-                };
-                
-                const response = await fetch(`${API_BASE}/page/${currentPage.subdomain}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(saveData)
-                });
-                
-                const result = await response.json();
-                console.log('Save result:', result);
-                
-                if (result.success) {
-                    markAsSaved();
-                    
-                    if (result.warning) {
-                        showSaveNotification('Saved locally', true);
-                    } else {
-                        showSaveNotification('Published!');
-                    }
-                } else {
-                    console.error('Save failed:', result.message);
-                    alert('Failed to save: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Save failed:', error);
-                alert('Failed to save page. Please try again.');
-            } finally {
-                // Re-enable save button
-                const saveBtn = document.getElementById('save-btn');
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-                saveBtn.disabled = false;
-            }
-        }
-
-        async function syncToLive() {
-            try {
-                const response = await fetch(`${API_BASE}/page/${currentPage.subdomain}/sync`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showSaveNotification('Synced!');
-                } else {
-                    alert('Sync failed: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Sync failed:', error);
-                alert('Failed to sync to live server.');
-            }
-        }
-
-        function previewPage() {
-            window.open(`/sites/${currentPage.subdomain}/`, '_blank');
-        }
-
-        function goToMyPages() {
-            if (hasUnsavedChanges) {
-                if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
-                    return;
-                }
-            }
-            window.location.href = '/pages/my-pages';
-        }
-
-        async function logout() {
-            if (hasUnsavedChanges) {
-                if (!confirm('You have unsaved changes. Are you sure you want to logout?')) {
-                    return;
-                }
-            }
-            
-            try {
-                await fetch(`${API_BASE}/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/';
-            } catch (error) {
-                window.location.href = '/';
-            }
-        }
-
-        // Warn user before leaving with unsaved changes
-        window.addEventListener('beforeunload', function (e) {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
-
-        // Initialize only once when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeBuilder);
-        } else {
-            // DOM is already ready
-            initializeBuilder();
-        }
-    </script>
+    <script src="builder.js"></script>
 </body>
 </html>

@@ -1,426 +1,1083 @@
-// Make sure this is at the top of your builder.js file:
-window.API_BASE = 'https://api.multigrounds.org/api';
 
-// Update these lines to use window variables:
-// window.currentUser = window.currentUser || null;
-// window.currentPage = window.currentPage || null;
-// window.currentSubdomain = window.currentSubdomain || null;
-
-const API_BASE = 'https://multigrounds.org/api';  // Fixed URL
+const API_BASE = 'https://api.multigrounds.org/api';
+let currentUser = null;
 let currentPage = null;
-let pageBlocks = [];
-let currentEditingBlock = null;
+let hasUnsavedChanges = false;
+
+// Global state for canvas builder
+const state = {
+    elements: [],
+    selectedElement: null,
+    history: [],
+    historyIndex: -1,
+    draggedElement: null,
+    isDragging: false,
+    isResizing: false,
+    resizeHandle: null,
+    startX: 0,
+    startY: 0,
+    startWidth: 0,
+    startHeight: 0,
+    startLeft: 0,
+    startTop: 0,
+    clipboard: null,
+    nextId: 1,
+    canvas: null,
+    snapThreshold: 10,
+    pageSettings: {
+        backgroundColor: '#ffffff',
+        backgroundImage: '',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+    }
+};
+
+// Get subdomain from URL
+const urlParams = new URLSearchParams(window.location.search);
+const pageSubdomain = urlParams.get('page');
 
 // Initialize the builder
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if user is logged in and load their page
-    await loadUserPage();
-    setupDragAndDrop();
+    await initializeBuilder();
 });
 
-async function loadUserPage() {
+// Initialize builder
+async function initializeBuilder() {
+    console.log('Starting builder initialization...');
+    
     try {
-        const response = await fetch(`${API_BASE}/my-page`, {
+        // Check if user is logged in
+        const loginResponse = await fetch(`${API_BASE}/check-login`, {
             credentials: 'include'
         });
         
-        if (response.status === 401) {
-            alert('Please log in to access the page builder');
-            window.location.href = '/pages/support';
+        if (!loginResponse.ok) {
+            throw new Error('Login check failed');
+        }
+        
+        const loginData = await loginResponse.json();
+        
+        if (!loginData.success || !loginData.logged_in) {
+            showError('Please log in to use the page builder.');
+            setTimeout(() => {
+                window.location.href = '/pages/support';
+            }, 2000);
             return;
         }
         
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                currentPage = data.page;
-                document.getElementById('page-title').value = currentPage.title;
-                document.getElementById('page-subdomain').value = currentPage.subdomain;
-                document.getElementById('page-url').textContent = `multigrounds.org/${currentPage.subdomain}`;
-                
-                // Load existing blocks
-                try {
-                    const pageData = JSON.parse(currentPage.page_data);
-                    pageBlocks = pageData.blocks || [];
-                } catch (e) {
-                    console.error('Error parsing page data:', e);
-                    pageBlocks = [];
-                }
-                renderBlocks();
-            }
-        } else {
-            console.log('No existing page found - user can create one through billing');
+        currentUser = loginData.user;
+        
+        // Load the specific page
+        if (!pageSubdomain) {
+            showError('No page specified in URL.');
+            return;
         }
-    } catch (error) {
-        console.error('Error loading page:', error);
-        alert('Error loading page data. Please try logging in again.');
-        window.location.href = '/pages/support';
-    }
-}
-
-function setupDragAndDrop() {
-    const blockItems = document.querySelectorAll('.block-item');
-    const canvas = document.getElementById('canvas');
-    
-    // Make blocks draggable
-    blockItems.forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', e.target.dataset.blockType);
+        
+        const pageResponse = await fetch(`${API_BASE}/page/${pageSubdomain}`, {
+            credentials: 'include'
         });
-    });
-    
-    // Setup drop zones
-    canvas.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const dropZone = e.target.closest('.drop-zone');
-        if (dropZone) {
-            dropZone.classList.add('drag-over');
+        
+        if (!pageResponse.ok) {
+            throw new Error('Failed to load page');
         }
-    });
-    
-    canvas.addEventListener('dragleave', (e) => {
-        const dropZone = e.target.closest('.drop-zone');
-        if (dropZone) {
-            dropZone.classList.remove('drag-over');
+        
+        const pageData = await pageResponse.json();
+        
+        if (!pageData.success) {
+            throw new Error(pageData.message || 'Failed to load page');
         }
-    });
-    
-    canvas.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const dropZone = e.target.closest('.drop-zone');
-        if (dropZone) {
-            dropZone.classList.remove('drag-over');
-            const blockType = e.dataTransfer.getData('text/plain');
-            const dropIndex = Array.from(canvas.children).indexOf(dropZone);
-            addBlock(blockType, dropIndex);
+        
+        if (!pageData.page.is_owner) {
+            showError('You do not have permission to edit this page.');
+            return;
         }
-    });
-}
-
-function addBlock(type, index) {
-    const newBlock = createDefaultBlock(type);
-    pageBlocks.splice(index, 0, newBlock);
-    renderBlocks();
-}
-
-function createDefaultBlock(type) {
-    const defaults = {
-        header: {
-            type: 'header',
-            content: {
-                text: 'New Header',
-                level: 1,
-                align: 'left'
-            }
-        },
-        text: {
-            type: 'text',
-            content: {
-                text: 'Your text content goes here...',
-                align: 'left'
-            }
-        },
-        image: {
-            type: 'image',
-            content: {
-                src: 'https://via.placeholder.com/400x200',
-                alt: 'Placeholder image',
-                align: 'center',
-                maxWidth: '100%'
-            }
-        },
-        button: {
-            type: 'button',
-            content: {
-                text: 'Click Me',
-                link: '#',
-                style: 'primary',
-                align: 'center'
-            }
-        },
-        spacer: {
-            type: 'spacer',
-            content: {
-                height: '50px'
-            }
+        
+        currentPage = pageData.page;
+        
+        // Parse page data
+        try {
+            const parsedData = JSON.parse(currentPage.page_data || '{"elements": [], "pageSettings": {}}');
+            state.elements = parsedData.elements || [];
+            state.pageSettings = parsedData.pageSettings || state.pageSettings;
+            state.nextId = Math.max(...state.elements.map(el => el.id), 0) + 1;
+        } catch (e) {
+            console.warn('Failed to parse page data, using defaults:', e);
+            state.elements = [];
         }
-    };
-    
-    return defaults[type] || defaults.text;
-}
-
-function renderBlocks() {
-    const canvas = document.getElementById('canvas');
-    canvas.innerHTML = '';
-    
-    // Add initial drop zone
-    canvas.appendChild(createDropZone(0));
-    
-    pageBlocks.forEach((block, index) => {
-        const blockElement = createBlockElement(block, index);
-        canvas.appendChild(blockElement);
-        canvas.appendChild(createDropZone(index + 1));
-    });
-}
-
-function createDropZone(index) {
-    const dropZone = document.createElement('div');
-    dropZone.className = 'drop-zone';
-    dropZone.innerHTML = '<span class="text-muted">Drop blocks here</span>';
-    return dropZone;
-}
-
-function createBlockElement(block, index) {
-    const div = document.createElement('div');
-    div.className = 'editable-block mb-3';
-    div.dataset.blockIndex = index;
-    
-    let html = '';
-    const content = block.content;
-    
-    switch (block.type) {
-        case 'header':
-            html = `<h${content.level} class="text-${content.align}">${content.text}</h${content.level}>`;
-            break;
-        case 'text':
-            html = `<p class="text-${content.align}">${content.text}</p>`;
-            break;
-        case 'image':
-            html = `<div class="text-${content.align}"><img src="${content.src}" alt="${content.alt}" class="img-fluid" style="max-width: ${content.maxWidth}"></div>`;
-            break;
-        case 'button':
-            html = `<div class="text-${content.align}"><a href="${content.link}" class="btn btn-${content.style}">${content.text}</a></div>`;
-            break;
-        case 'spacer':
-            html = `<div style="height: ${content.height}; background: repeating-linear-gradient(90deg, transparent, transparent 10px, #f0f0f0 10px, #f0f0f0 20px);"></div>`;
-            break;
+        
+        // Initialize UI
+        initializeUI();
+        
+        console.log('Builder initialization complete!');
+        
+    } catch (error) {
+        console.error('Builder initialization failed:', error);
+        showError(`Failed to initialize builder: ${error.message}`);
     }
+}
+
+function initializeUI() {
+    // Update page info
+    document.getElementById('current-subdomain').textContent = currentPage.subdomain;
+    document.getElementById('current-title').textContent = currentPage.title;
+    document.getElementById('editing-page').textContent = currentPage.subdomain;
     
-    div.innerHTML = `
-        ${html}
-        <div class="block-controls">
-            <button class="btn btn-sm btn-primary" onclick="editBlock(${index})">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="removeBlock(${index})">
-                <i class="fas fa-trash"></i>
+    // Show builder interface
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('builder').style.display = 'flex';
+    
+    // Initialize canvas
+    state.canvas = document.getElementById('canvas');
+    setupDragAndDrop();
+    setupCanvasInteraction();
+    loadPopularIcons();
+    
+    // Render existing elements
+    state.elements.forEach(el => renderElement(el));
+    applyBackgroundFromState();
+    
+    addToHistory();
+}
+
+function showError(message) {
+    document.getElementById('loading').innerHTML = `
+        <div class="error-message">
+            <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+            <p>${message}</p>
+            <button class="btn btn-primary" onclick="window.location.href='/pages/support'">
+                Go to Support
             </button>
         </div>
     `;
-    
-    return div;
 }
 
-function editBlock(index) {
-    currentEditingBlock = index;
-    const block = pageBlocks[index];
-    const modal = new bootstrap.Modal(document.getElementById('blockEditorModal'));
-    
-    document.getElementById('block-editor-content').innerHTML = createBlockEditor(block);
-    modal.show();
+function markAsUnsaved() {
+    hasUnsavedChanges = true;
+    document.getElementById('unsaved-indicator').style.display = 'inline';
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.classList.remove('primary');
+    saveBtn.style.background = '#ffc107';
+    saveBtn.style.borderColor = '#ffc107';
 }
 
-function createBlockEditor(block) {
-    const content = block.content;
+function markAsSaved() {
+    hasUnsavedChanges = false;
+    document.getElementById('unsaved-indicator').style.display = 'none';
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.classList.add('primary');
+    saveBtn.style.background = '';
+    saveBtn.style.borderColor = '';
+}
+
+function showSaveNotification(message, isWarning = false) {
+    const notification = document.getElementById('save-notification');
+    const messageSpan = document.getElementById('save-message');
     
-    switch (block.type) {
-        case 'header':
-            return `
-                <div class="mb-3">
-                    <label class="form-label">Header Text</label>
-                    <input type="text" id="edit-text" class="form-control" value="${content.text}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Header Level</label>
-                    <select id="edit-level" class="form-select">
-                        <option value="1" ${content.level == 1 ? 'selected' : ''}>H1</option>
-                        <option value="2" ${content.level == 2 ? 'selected' : ''}>H2</option>
-                        <option value="3" ${content.level == 3 ? 'selected' : ''}>H3</option>
-                        <option value="4" ${content.level == 4 ? 'selected' : ''}>H4</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Alignment</label>
-                    <select id="edit-align" class="form-select">
-                        <option value="left" ${content.align === 'left' ? 'selected' : ''}>Left</option>
-                        <option value="center" ${content.align === 'center' ? 'selected' : ''}>Center</option>
-                        <option value="right" ${content.align === 'right' ? 'selected' : ''}>Right</option>
-                    </select>
-                </div>
-            `;
-        case 'text':
-            return `
-                <div class="mb-3">
-                    <label class="form-label">Text Content</label>
-                    <textarea id="edit-text" class="form-control" rows="4">${content.text}</textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Alignment</label>
-                    <select id="edit-align" class="form-select">
-                        <option value="left" ${content.align === 'left' ? 'selected' : ''}>Left</option>
-                        <option value="center" ${content.align === 'center' ? 'selected' : ''}>Center</option>
-                        <option value="right" ${content.align === 'right' ? 'selected' : ''}>Right</option>
-                    </select>
-                </div>
-            `;
-        case 'image':
-            return `
-                <div class="mb-3">
-                    <label class="form-label">Image URL</label>
-                    <input type="url" id="edit-src" class="form-control" value="${content.src}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Alt Text</label>
-                    <input type="text" id="edit-alt" class="form-control" value="${content.alt}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Max Width</label>
-                    <input type="text" id="edit-maxWidth" class="form-control" value="${content.maxWidth}" placeholder="100%">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Alignment</label>
-                    <select id="edit-align" class="form-select">
-                        <option value="left" ${content.align === 'left' ? 'selected' : ''}>Left</option>
-                        <option value="center" ${content.align === 'center' ? 'selected' : ''}>Center</option>
-                        <option value="right" ${content.align === 'right' ? 'selected' : ''}>Right</option>
-                    </select>
-                </div>
-            `;
-        case 'button':
-            return `
-                <div class="mb-3">
-                    <label class="form-label">Button Text</label>
-                    <input type="text" id="edit-text" class="form-control" value="${content.text}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Link URL</label>
-                    <input type="url" id="edit-link" class="form-control" value="${content.link}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Button Style</label>
-                    <select id="edit-style" class="form-select">
-                        <option value="primary" ${content.style === 'primary' ? 'selected' : ''}>Primary</option>
-                        <option value="secondary" ${content.style === 'secondary' ? 'selected' : ''}>Secondary</option>
-                        <option value="success" ${content.style === 'success' ? 'selected' : ''}>Success</option>
-                        <option value="danger" ${content.style === 'danger' ? 'selected' : ''}>Danger</option>
-                        <option value="warning" ${content.style === 'warning' ? 'selected' : ''}>Warning</option>
-                        <option value="info" ${content.style === 'info' ? 'selected' : ''}>Info</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Alignment</label>
-                    <select id="edit-align" class="form-select">
-                        <option value="left" ${content.align === 'left' ? 'selected' : ''}>Left</option>
-                        <option value="center" ${content.align === 'center' ? 'selected' : ''}>Center</option>
-                        <option value="right" ${content.align === 'right' ? 'selected' : ''}>Right</option>
-                    </select>
-                </div>
-            `;
-        default:
-            return '<p>No editor available for this block type.</p>';
+    messageSpan.textContent = message;
+    
+    if (isWarning) {
+        notification.classList.add('warning');
+    } else {
+        notification.classList.remove('warning');
+    }
+    
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, isWarning ? 5000 : 2000);
+}
+
+// Popular icons to display
+const popularIcons = [
+    'home', 'star', 'heart', 'user', 'settings', 'search',
+    'mail', 'phone', 'camera', 'music', 'video', 'image',
+    'folder', 'file', 'download', 'upload', 'arrow-right', 'arrow-left',
+    'check', 'close', 'menu', 'more', 'shopping-cart', 'tag'
+];
+
+function loadPopularIcons() {
+    const iconGrid = document.getElementById('iconGrid');
+    iconGrid.innerHTML = '';
+    popularIcons.forEach(icon => {
+        const div = document.createElement('div');
+        div.className = 'icon-option';
+        div.draggable = true;
+        div.dataset.type = 'icon';
+        div.dataset.iconName = icon;
+        div.innerHTML = `<img src="https://api.iconify.design/mdi/${icon}.svg" alt="${icon}">`;
+        div.addEventListener('dragstart', handleDragStart);
+        iconGrid.appendChild(div);
+    });
+}
+
+// Drag and Drop
+function setupDragAndDrop() {
+    const elementItems = document.querySelectorAll('.element-item');
+    elementItems.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+    });
+
+    state.canvas.addEventListener('dragover', handleDragOver);
+    state.canvas.addEventListener('drop', handleDrop);
+}
+
+function handleDragStart(e) {
+    const type = e.target.closest('[data-type]').dataset.type;
+    const iconName = e.target.closest('[data-type]')?.dataset.iconName;
+    e.dataTransfer.setData('elementType', type);
+    if (iconName) {
+        e.dataTransfer.setData('iconName', iconName);
     }
 }
 
-function saveBlockChanges() {
-    const block = pageBlocks[currentEditingBlock];
-    
-    switch (block.type) {
-        case 'header':
-            block.content.text = document.getElementById('edit-text').value;
-            block.content.level = parseInt(document.getElementById('edit-level').value);
-            block.content.align = document.getElementById('edit-align').value;
-            break;
-        case 'text':
-            block.content.text = document.getElementById('edit-text').value;
-            block.content.align = document.getElementById('edit-align').value;
-            break;
-        case 'image':
-            block.content.src = document.getElementById('edit-src').value;
-            block.content.alt = document.getElementById('edit-alt').value;
-            block.content.maxWidth = document.getElementById('edit-maxWidth').value;
-            block.content.align = document.getElementById('edit-align').value;
-            break;
-        case 'button':
-            block.content.text = document.getElementById('edit-text').value;
-            block.content.link = document.getElementById('edit-link').value;
-            block.content.style = document.getElementById('edit-style').value;
-            block.content.align = document.getElementById('edit-align').value;
-            break;
-    }
-    
-    renderBlocks();
-    bootstrap.Modal.getInstance(document.getElementById('blockEditorModal')).hide();
+function handleDragOver(e) {
+    e.preventDefault();
 }
 
-function removeBlock(index) {
-    if (confirm('Are you sure you want to remove this block?')) {
-        pageBlocks.splice(index, 1);
-        renderBlocks();
-    }
-}
+function handleDrop(e) {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('elementType');
+    const iconName = e.dataTransfer.getData('iconName');
+    
+    const rect = state.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-async function savePage() {
-    const title = document.getElementById('page-title').value;
-    const subdomain = document.getElementById('page-subdomain').value;
-    
-    if (!title || !subdomain) {
-        alert('Please enter both a title and subdomain');
-        return;
-    }
-    
-    const pageData = {
-        title: title,
-        page_data: JSON.stringify({ blocks: pageBlocks })
-    };
-    
-    try {
-        let response;
-        if (currentPage) {
-            // Update existing page
-            response = await fetch(`${API_BASE}/page/${currentPage.subdomain}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(pageData)
-            });
+    if (type === 'image') {
+        openImageModal(x, y);
+    } else if (type === 'icon') {
+        if (iconName) {
+            createElement(type, x, y, { iconName });
         } else {
-            // Create new page
-            pageData.subdomain = subdomain;
-            response = await fetch(`${API_BASE}/create-page`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(pageData)
-            });
+            openIconModal(x, y);
+        }
+    } else {
+        createElement(type, x, y);
+    }
+}
+
+// Create Element
+function createElement(type, x, y, options = {}) {
+    const element = {
+        id: state.nextId++,
+        type: type,
+        x: x,
+        y: y,
+        width: 200,
+        height: 100,
+        rotation: 0,
+        zIndex: state.elements.length,
+        locked: false,
+        styles: {}
+    };
+
+    switch (type) {
+        case 'text':
+            element.content = 'Double-click to edit';
+            element.styles = {
+                fontFamily: 'Arial',
+                fontSize: '16px',
+                fontWeight: 'normal',
+                color: '#000000',
+                textAlign: 'left'
+            };
+            element.width = 200;
+            element.height = 40;
+            break;
+        case 'image':
+            element.content = options.url || '';
+            element.styles = {
+                objectFit: 'contain',
+                borderRadius: '0px'
+            };
+            element.width = 300;
+            element.height = 200;
+            break;
+        case 'rectangle':
+            element.styles = {
+                backgroundColor: '#007bff',
+                borderRadius: '0px'
+            };
+            break;
+        case 'circle':
+            element.width = 150;
+            element.height = 150;
+            element.styles = {
+                backgroundColor: '#28a745',
+                borderRadius: '50%'
+            };
+            break;
+        case 'line':
+            element.width = 200;
+            element.height = 2;
+            element.styles = {
+                backgroundColor: '#000000'
+            };
+            break;
+        case 'icon':
+            element.content = options.iconName || 'star';
+            element.width = 64;
+            element.height = 64;
+            element.styles = {
+                color: '#007bff'
+            };
+            break;
+    }
+
+    state.elements.push(element);
+    renderElement(element);
+    addToHistory();
+    markAsUnsaved();
+}
+
+// Render Element
+function renderElement(element) {
+    let div = document.querySelector(`[data-element-id="${element.id}"]`);
+    
+    if (!div) {
+        div = document.createElement('div');
+        div.className = 'canvas-element';
+        div.dataset.elementId = element.id;
+        
+        // Add controls
+        div.innerHTML = `
+            <div class="element-controls">
+                <button class="element-control-btn" onclick="editElement(${element.id})">
+                    <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="element-control-btn" onclick="deleteElement(${element.id})">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            </div>
+            <div class="resize-handle nw"></div>
+            <div class="resize-handle ne"></div>
+            <div class="resize-handle sw"></div>
+            <div class="resize-handle se"></div>
+            <div class="resize-handle n"></div>
+            <div class="resize-handle s"></div>
+            <div class="resize-handle w"></div>
+            <div class="resize-handle e"></div>
+        `;
+        
+        state.canvas.appendChild(div);
+        setupElementInteraction(div, element);
+    }
+
+    // Update position and size
+    div.style.left = element.x + 'px';
+    div.style.top = element.y + 'px';
+    div.style.width = element.width + 'px';
+    div.style.height = element.height + 'px';
+    div.style.transform = `rotate(${element.rotation}deg)`;
+    div.style.zIndex = element.zIndex;
+
+    if (element.locked) {
+        div.classList.add('locked');
+    } else {
+        div.classList.remove('locked');
+    }
+
+    // Render content based on type
+    let contentDiv = div.querySelector('.element-content');
+    if (!contentDiv) {
+        contentDiv = document.createElement('div');
+        contentDiv.className = 'element-content';
+        div.insertBefore(contentDiv, div.firstChild);
+    }
+
+    switch (element.type) {
+        case 'text':
+            contentDiv.className = 'text-element';
+            contentDiv.contentEditable = false;
+            contentDiv.textContent = element.content;
+            Object.assign(contentDiv.style, element.styles);
+            break;
+        case 'image':
+            contentDiv.className = 'image-element';
+            contentDiv.innerHTML = element.content 
+                ? `<img src="${element.content}" alt="Image">` 
+                : '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #999;">No image</div>';
+            Object.assign(contentDiv.style, element.styles);
+            break;
+        case 'rectangle':
+        case 'circle':
+        case 'line':
+            contentDiv.className = 'shape-element';
+            Object.assign(contentDiv.style, element.styles);
+            break;
+        case 'icon':
+            contentDiv.className = 'shape-element';
+            contentDiv.innerHTML = `<img src="https://api.iconify.design/mdi/${element.content}.svg" style="width: 100%; height: 100%;">`;
+            break;
+    }
+}
+
+// Setup element interaction
+function setupElementInteraction(div, element) {
+    const contentDiv = div.querySelector('.element-content');
+    
+    // Selection
+    div.addEventListener('mousedown', (e) => {
+        if (element.locked) return;
+        
+        // Check if clicking on resize handle
+        if (e.target.classList.contains('resize-handle')) {
+            startResize(e, element, e.target.classList[1]);
+            return;
         }
         
-        const data = await response.json();
-        if (data.success) {
-            alert('Page saved successfully!');
-            if (!currentPage) {
-                // Reload to show the new page
-                location.reload();
+        selectElement(element.id);
+        
+        // Start dragging
+        if (!e.target.closest('.element-controls')) {
+            startDrag(e, element);
+        }
+    });
+
+    // Double-click to edit text
+    if (element.type === 'text') {
+        contentDiv.addEventListener('dblclick', () => {
+            if (element.locked) return;
+            contentDiv.contentEditable = true;
+            contentDiv.focus();
+            document.execCommand('selectAll', false, null);
+        });
+
+        contentDiv.addEventListener('blur', () => {
+            contentDiv.contentEditable = false;
+            element.content = contentDiv.textContent;
+            addToHistory();
+            markAsUnsaved();
+        });
+
+        contentDiv.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                contentDiv.blur();
             }
+        });
+    }
+
+    // Right-click context menu
+    div.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        selectElement(element.id);
+        showContextMenu(e.clientX, e.clientY);
+    });
+}
+
+// Drag element
+function startDrag(e, element) {
+    if (element.locked) return;
+    
+    state.isDragging = true;
+    state.draggedElement = element;
+    state.startX = e.clientX;
+    state.startY = e.clientY;
+    state.startLeft = element.x;
+    state.startTop = element.y;
+    
+    // Add dragging class to prevent pointer events during drag
+    const div = document.querySelector(`[data-element-id="${element.id}"]`);
+    if (div) div.classList.add('dragging');
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    
+    e.preventDefault();
+}
+
+function handleDragMove(e) {
+    if (!state.isDragging) return;
+
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+
+    let newX = state.startLeft + dx;
+    let newY = state.startTop + dy;
+
+    // Snap to grid/guides
+    if (document.getElementById('snapToggle').checked) {
+        const snapped = snapToGuides(newX, newY, state.draggedElement);
+        newX = snapped.x;
+        newY = snapped.y;
+    }
+
+    state.draggedElement.x = Math.max(0, newX);
+    state.draggedElement.y = Math.max(0, newY);
+
+    renderElement(state.draggedElement);
+}
+
+function handleDragEnd() {
+    if (state.isDragging) {
+        // Remove dragging class
+        const div = document.querySelector(`[data-element-id="${state.draggedElement.id}"]`);
+        if (div) div.classList.remove('dragging');
+        
+        addToHistory();
+        markAsUnsaved();
+    }
+    
+    state.isDragging = false;
+    state.draggedElement = null;
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+}
+
+// Resize element
+function startResize(e, element, handle) {
+    e.stopPropagation();
+    if (element.locked) return;
+
+    state.isResizing = true;
+    state.draggedElement = element;
+    state.resizeHandle = handle;
+    state.startX = e.clientX;
+    state.startY = e.clientY;
+    state.startWidth = element.width;
+    state.startHeight = element.height;
+    state.startLeft = element.x;
+    state.startTop = element.y;
+
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+}
+
+function handleResizeMove(e) {
+    if (!state.isResizing) return;
+
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+    const element = state.draggedElement;
+    const handle = state.resizeHandle;
+
+    if (handle.includes('e')) {
+        element.width = Math.max(20, state.startWidth + dx);
+    }
+    if (handle.includes('w')) {
+        const newWidth = Math.max(20, state.startWidth - dx);
+        element.x = state.startLeft + (state.startWidth - newWidth);
+        element.width = newWidth;
+    }
+    if (handle.includes('s')) {
+        element.height = Math.max(20, state.startHeight + dy);
+    }
+    if (handle.includes('n')) {
+        const newHeight = Math.max(20, state.startHeight - dy);
+        element.y = state.startTop + (state.startHeight - newHeight);
+        element.height = newHeight;
+    }
+
+    renderElement(element);
+}
+
+function handleResizeEnd() {
+    if (state.isResizing) {
+        addToHistory();
+        markAsUnsaved();
+    }
+    
+    state.isResizing = false;
+    state.draggedElement = null;
+    state.resizeHandle = null;
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+}
+
+// Selection
+function selectElement(id) {
+    // Deselect previous
+    if (state.selectedElement) {
+        const prevDiv = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
+        if (prevDiv) prevDiv.classList.remove('selected');
+    }
+
+    // Select new
+    const element = state.elements.find(el => el.id === id);
+    if (element) {
+        state.selectedElement = element;
+        const div = document.querySelector(`[data-element-id="${id}"]`);
+        if (div) div.classList.add('selected');
+        updateToolbar();
+    }
+}
+
+function deselectAll() {
+    if (state.selectedElement) {
+        const div = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
+        if (div) div.classList.remove('selected');
+        state.selectedElement = null;
+        updateToolbar();
+    }
+}
+
+// Update toolbar based on selection
+function updateToolbar() {
+    document.getElementById('textControls').style.display = 'none';
+    document.getElementById('alignControls').style.display = 'none';
+    document.getElementById('layerControls').style.display = 'none';
+
+    if (state.selectedElement) {
+        document.getElementById('layerControls').style.display = 'flex';
+        
+        if (state.selectedElement.type === 'text') {
+            document.getElementById('textControls').style.display = 'flex';
+            document.getElementById('alignControls').style.display = 'flex';
+            
+            // Update toolbar values
+            document.getElementById('fontFamily').value = state.selectedElement.styles.fontFamily || 'Arial';
+            document.getElementById('fontSize').value = parseInt(state.selectedElement.styles.fontSize) || 16;
+            document.getElementById('fontWeight').value = state.selectedElement.styles.fontWeight || 'normal';
+            document.getElementById('textColor').value = state.selectedElement.styles.color || '#000000';
+        }
+    }
+}
+
+// Update selected element from toolbar
+function updateSelectedElement() {
+    if (!state.selectedElement || state.selectedElement.type !== 'text') return;
+
+    state.selectedElement.styles.fontFamily = document.getElementById('fontFamily').value;
+    state.selectedElement.styles.fontSize = document.getElementById('fontSize').value + 'px';
+    state.selectedElement.styles.fontWeight = document.getElementById('fontWeight').value;
+    state.selectedElement.styles.color = document.getElementById('textColor').value;
+
+    renderElement(state.selectedElement);
+    addToHistory();
+    markAsUnsaved();
+}
+
+// Canvas interaction
+function setupCanvasInteraction() {
+    state.canvas.addEventListener('mousedown', (e) => {
+        if (e.target === state.canvas) {
+            deselectAll();
+        }
+    });
+
+    // Close context menu on click
+    document.addEventListener('click', () => {
+        document.getElementById('contextMenu').classList.remove('show');
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' && state.selectedElement) {
+            deleteElement();
+        } else if (e.key === 'Escape') {
+            deselectAll();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !e.target.contentEditable) {
+            copyElement();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !e.target.contentEditable) {
+            pasteElement();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && !e.target.contentEditable) {
+            e.preventDefault();
+            duplicateElement();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.target.contentEditable) {
+            e.preventDefault();
+            undo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !e.target.contentEditable) {
+            e.preventDefault();
+            redo();
+        }
+    });
+}
+
+// Context Menu
+function showContextMenu(x, y) {
+    const menu = document.getElementById('contextMenu');
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.classList.add('show');
+
+    // Update lock text
+    document.getElementById('lockText').textContent = 
+        state.selectedElement?.locked ? 'Unlock' : 'Lock';
+}
+
+// Element actions
+function editElement(id) {
+    if (id) {
+        selectElement(id);
+    }
+    
+    if (!state.selectedElement) return;
+
+    if (state.selectedElement.type === 'text') {
+        const div = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
+        const contentDiv = div.querySelector('.text-element');
+        contentDiv.contentEditable = true;
+        contentDiv.focus();
+        document.execCommand('selectAll', false, null);
+    } else if (state.selectedElement.type === 'image') {
+        const newUrl = prompt('Enter new image URL (HTTPS only):', state.selectedElement.content);
+        if (newUrl && newUrl.startsWith('https://')) {
+            state.selectedElement.content = newUrl;
+            renderElement(state.selectedElement);
+            addToHistory();
+            markAsUnsaved();
+        } else if (newUrl) {
+            alert('Please enter a valid HTTPS URL');
+        }
+    }
+}
+
+function deleteElement(id) {
+    if (id) {
+        selectElement(id);
+    }
+    
+    if (!state.selectedElement) return;
+
+    const index = state.elements.findIndex(el => el.id === state.selectedElement.id);
+    if (index > -1) {
+        const div = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
+        if (div) div.remove();
+        state.elements.splice(index, 1);
+        state.selectedElement = null;
+        updateToolbar();
+        addToHistory();
+        markAsUnsaved();
+    }
+}
+
+function copyElement() {
+    if (state.selectedElement) {
+        state.clipboard = JSON.parse(JSON.stringify(state.selectedElement));
+    }
+}
+
+function pasteElement() {
+    if (state.clipboard) {
+        const newElement = JSON.parse(JSON.stringify(state.clipboard));
+        newElement.id = state.nextId++;
+        newElement.x += 20;
+        newElement.y += 20;
+        newElement.zIndex = state.elements.length;
+        state.elements.push(newElement);
+        renderElement(newElement);
+        selectElement(newElement.id);
+        addToHistory();
+        markAsUnsaved();
+    }
+}
+
+function duplicateElement() {
+    copyElement();
+    pasteElement();
+}
+
+function bringForward() {
+    if (!state.selectedElement) return;
+    const maxZ = Math.max(...state.elements.map(el => el.zIndex));
+    if (state.selectedElement.zIndex < maxZ) {
+        state.selectedElement.zIndex++;
+        renderElement(state.selectedElement);
+        addToHistory();
+        markAsUnsaved();
+    }
+}
+
+function sendBackward() {
+    if (!state.selectedElement) return;
+    const minZ = Math.min(...state.elements.map(el => el.zIndex));
+    if (state.selectedElement.zIndex > minZ) {
+        state.selectedElement.zIndex--;
+        renderElement(state.selectedElement);
+        addToHistory();
+        markAsUnsaved();
+    }
+}
+
+function toggleLock() {
+    if (!state.selectedElement) return;
+    state.selectedElement.locked = !state.selectedElement.locked;
+    renderElement(state.selectedElement);
+    addToHistory();
+    markAsUnsaved();
+}
+
+function alignElement(align) {
+    if (!state.selectedElement || state.selectedElement.type !== 'text') return;
+    state.selectedElement.styles.textAlign = align;
+    renderElement(state.selectedElement);
+    addToHistory();
+    markAsUnsaved();
+}
+
+function centerHorizontally() {
+    if (!state.selectedElement) return;
+    const canvasWidth = state.canvas.offsetWidth;
+    state.selectedElement.x = (canvasWidth - state.selectedElement.width) / 2;
+    renderElement(state.selectedElement);
+    addToHistory();
+    markAsUnsaved();
+}
+
+function centerVertically() {
+    if (!state.selectedElement) return;
+    const canvasHeight = state.canvas.offsetHeight;
+    state.selectedElement.y = (canvasHeight - state.selectedElement.height) / 2;
+    renderElement(state.selectedElement);
+    addToHistory();
+    markAsUnsaved();
+}
+
+// Snap to guides
+function snapToGuides(x, y, element) {
+    const threshold = state.snapThreshold;
+    const canvasWidth = state.canvas.offsetWidth;
+    const canvasHeight = state.canvas.offsetHeight;
+    
+    // Center lines
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    const elementCenterX = x + element.width / 2;
+    const elementCenterY = y + element.height / 2;
+
+    let snappedX = x;
+    let snappedY = y;
+
+    // Snap to center
+    if (Math.abs(elementCenterX - centerX) < threshold) {
+        snappedX = centerX - element.width / 2;
+    }
+    if (Math.abs(elementCenterY - centerY) < threshold) {
+        snappedY = centerY - element.height / 2;
+    }
+
+    // Snap to edges
+    if (Math.abs(x) < threshold) snappedX = 0;
+    if (Math.abs(y) < threshold) snappedY = 0;
+    if (Math.abs(x + element.width - canvasWidth) < threshold) {
+        snappedX = canvasWidth - element.width;
+    }
+    if (Math.abs(y + element.height - canvasHeight) < threshold) {
+        snappedY = canvasHeight - element.height;
+    }
+
+    return { x: snappedX, y: snappedY };
+}
+
+// Grid toggle
+function toggleGrid() {
+    state.canvas.classList.toggle('grid');
+}
+
+// History (Undo/Redo)
+function addToHistory() {
+    const snapshot = JSON.stringify({
+        elements: state.elements,
+        pageSettings: state.pageSettings
+    });
+    
+    // Remove any history after current index
+    state.history = state.history.slice(0, state.historyIndex + 1);
+    
+    state.history.push(snapshot);
+    state.historyIndex++;
+
+    // Limit history to 50 states
+    if (state.history.length > 50) {
+        state.history.shift();
+        state.historyIndex--;
+    }
+}
+
+function undo() {
+    if (state.historyIndex > 0) {
+        state.historyIndex--;
+        loadHistoryState();
+    }
+}
+
+function redo() {
+    if (state.historyIndex < state.history.length - 1) {
+        state.historyIndex++;
+        loadHistoryState();
+    }
+}
+
+function loadHistoryState() {
+    const snapshot = JSON.parse(state.history[state.historyIndex]);
+    state.elements = snapshot.elements;
+    state.pageSettings = snapshot.pageSettings;
+    
+    // Clear and re-render
+    state.canvas.innerHTML = '';
+    state.elements.forEach(el => renderElement(el));
+    deselectAll();
+    applyBackgroundFromState();
+}
+
+// Background
+function applyBackground() {
+    const color = document.getElementById('bgColor').value;
+    const imageUrl = document.getElementById('bgImageUrl').value.trim();
+
+    state.pageSettings.backgroundColor = color;
+    
+    if (imageUrl) {
+        if (!imageUrl.startsWith('https://')) {
+            alert('Background image must be a valid HTTPS URL');
+            return;
+        }
+        state.pageSettings.backgroundImage = imageUrl;
+    } else {
+        state.pageSettings.backgroundImage = '';
+    }
+
+    applyBackgroundFromState();
+    addToHistory();
+    markAsUnsaved();
+}
+
+function applyBackgroundFromState() {
+    state.canvas.style.backgroundColor = state.pageSettings.backgroundColor;
+    
+    if (state.pageSettings.backgroundImage) {
+        state.canvas.style.backgroundImage = `url(${state.pageSettings.backgroundImage})`;
+        state.canvas.style.backgroundSize = state.pageSettings.backgroundSize;
+        state.canvas.style.backgroundPosition = state.pageSettings.backgroundPosition;
+    } else {
+        state.canvas.style.backgroundImage = 'none';
+    }
+}
+
+// Modals
+let pendingImagePosition = null;
+let pendingIconPosition = null;
+
+function openImageModal(x, y) {
+    pendingImagePosition = { x, y };
+    document.getElementById('imageModal').classList.add('show');
+    document.getElementById('imageUrl').value = '';
+    document.getElementById('imageError').style.display = 'none';
+    document.getElementById('imageUrl').focus();
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
+    pendingImagePosition = null;
+}
+
+function addImageFromModal() {
+    const url = document.getElementById('imageUrl').value.trim();
+    const error = document.getElementById('imageError');
+
+    if (!url.startsWith('https://')) {
+        error.style.display = 'block';
+        return;
+    }
+
+    createElement('image', pendingImagePosition.x, pendingImagePosition.y, { url });
+    closeImageModal();
+}
+
+function openIconModal(x, y) {
+    pendingIconPosition = { x, y };
+    document.getElementById('iconModal').classList.add('show');
+    document.getElementById('iconName').value = '';
+    document.getElementById('iconName').focus();
+}
+
+function closeIconModal() {
+    document.getElementById('iconModal').classList.remove('show');
+    pendingIconPosition = null;
+}
+
+function addIconFromModal() {
+    const iconName = document.getElementById('iconName').value.trim();
+    if (iconName) {
+        createElement('icon', pendingIconPosition.x, pendingIconPosition.y, { iconName });
+        closeIconModal();
+    }
+}
+
+// Save/Preview functions
+async function savePage() {
+    try {
+        console.log('Saving page...', currentPage.subdomain);
+        
+        const saveBtn = document.getElementById('save-btn');
+        const originalHtml = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.disabled = true;
+        
+        const saveData = {
+            page_data: JSON.stringify({
+                elements: state.elements,
+                pageSettings: state.pageSettings
+            }),
+            title: currentPage.title
+        };
+        
+        const response = await fetch(`${API_BASE}/page/${currentPage.subdomain}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(saveData)
+        });
+        
+        const result = await response.json();
+        console.log('Save result:', result);
+        
+        if (result.success) {
+            markAsSaved();
+            showSaveNotification(result.warning ? 'Saved locally' : 'Published!', !!result.warning);
         } else {
-            alert('Error saving page: ' + data.message);
+            console.error('Save failed:', result.message);
+            alert('Failed to save: ' + result.message);
         }
     } catch (error) {
-        console.error('Save error:', error);
-        alert('Error saving page. Please try again.');
+        console.error('Save failed:', error);
+        alert('Failed to save page. Please try again.');
+    } finally {
+        const saveBtn = document.getElementById('save-btn');
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        saveBtn.disabled = false;
     }
 }
 
 function previewPage() {
-    const subdomain = document.getElementById('page-subdomain').value;
-    if (subdomain && currentPage) {
-        window.open(`https://multigrounds.org/${subdomain}`, '_blank');
-    } else {
-        alert('Please save your page first');
+    window.open(`/sites/${currentPage.subdomain}/`, '_blank');
+}
+
+function goToMyPages() {
+    if (hasUnsavedChanges) {
+        if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+            return;
+        }
+    }
+    window.location.href = '/pages/my-pages';
+}
+
+async function logout() {
+    if (hasUnsavedChanges) {
+        if (!confirm('You have unsaved changes. Are you sure you want to logout?')) {
+            return;
+        }
+    }
+    
+    try {
+        await fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        window.location.href = '/';
+    } catch (error) {
+        window.location.href = '/';
     }
 }
 
-async function publishPage() {
-    await savePage();
-    // Additional publish logic can go here
-    alert('Page published successfully!');
-}
+// Warn user before leaving with unsaved changes
+window.addEventListener('beforeunload', function (e) {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
