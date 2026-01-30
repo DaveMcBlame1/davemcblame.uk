@@ -214,7 +214,18 @@
             }
 
             const pagesHtml = pages.map(page => {
-                const hasContent = page.page_data && JSON.parse(page.page_data).blocks.length > 0;
+                let hasContent = false;
+                try {
+                    if (page.page_data) {
+                        const parsed = JSON.parse(page.page_data);
+                        hasContent = (parsed.blocks && parsed.blocks.length > 0) || 
+                                    (parsed.elements && parsed.elements.length > 0);
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse page_data for', page.subdomain, e);
+                    hasContent = false;
+                }
+                
                 const planColor = {
                     'solo': 'primary',
                     'starter': 'info',

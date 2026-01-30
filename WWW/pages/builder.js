@@ -369,6 +369,12 @@ function renderElement(element) {
         state.canvas.appendChild(div);
         setupElementInteraction(div, element);
     }
+    
+    // Verify div still exists in DOM
+    if (!div.parentNode) {
+        console.warn('Element div removed from DOM, skipping render for', element.id);
+        return;
+    }
 
     // Update position and size
     div.style.left = element.x + 'px';
@@ -386,6 +392,11 @@ function renderElement(element) {
 
     // Update content based on type (don't recreate the div)
     const contentDiv = div.querySelector('.element-content');
+    
+    if (!contentDiv) {
+        console.error('Content div not found during render for element', element.id);
+        return;
+    }
     
     switch (element.type) {
         case 'text':
@@ -512,7 +523,7 @@ function startDrag(e, element) {
 }
 
 function handleDragMove(e) {
-    if (!state.isDragging) return;
+    if (!state.isDragging || !state.draggedElement) return;
 
     const dx = e.clientX - state.startX;
     const dy = e.clientY - state.startY;
@@ -530,7 +541,11 @@ function handleDragMove(e) {
     state.draggedElement.x = Math.max(0, newX);
     state.draggedElement.y = Math.max(0, newY);
 
-    renderElement(state.draggedElement);
+    // Only render if element still exists
+    const div = document.querySelector(`[data-element-id="${state.draggedElement.id}"]`);
+    if (div && div.parentNode) {
+        renderElement(state.draggedElement);
+    }
 }
 
 function handleDragEnd() {
@@ -569,7 +584,7 @@ function startResize(e, element, handle) {
 }
 
 function handleResizeMove(e) {
-    if (!state.isResizing) return;
+    if (!state.isResizing || !state.draggedElement) return;
 
     const dx = e.clientX - state.startX;
     const dy = e.clientY - state.startY;
@@ -593,7 +608,11 @@ function handleResizeMove(e) {
         element.height = newHeight;
     }
 
-    renderElement(element);
+    // Only render if element still exists
+    const div = document.querySelector(`[data-element-id="${element.id}"]`);
+    if (div && div.parentNode) {
+        renderElement(element);
+    }
 }
 
 function handleResizeEnd() {
