@@ -411,14 +411,24 @@ function renderElement(element) {
             break;
         case 'image':
             contentDiv.className = 'image-element';
+            contentDiv.style.width = '100%';
+            contentDiv.style.height = '100%';
             if (element.content) {
                 if (!contentDiv.querySelector('img') || contentDiv.querySelector('img').src !== element.content) {
-                    contentDiv.innerHTML = `<img src="${element.content}" alt="Image">`;
+                    contentDiv.innerHTML = `<img src="${element.content}" alt="Image" style="width: 100%; height: 100%; object-fit: ${element.styles.objectFit || 'contain'};">`;
+                } else {
+                    // Update existing image object-fit
+                    const img = contentDiv.querySelector('img');
+                    if (img) {
+                        img.style.objectFit = element.styles.objectFit || 'contain';
+                    }
                 }
             } else {
                 contentDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #999;">No image</div>';
             }
-            Object.assign(contentDiv.style, element.styles);
+            if (element.styles.borderRadius) {
+                contentDiv.style.borderRadius = element.styles.borderRadius;
+            }
             break;
         case 'rectangle':
         case 'circle':
@@ -496,6 +506,7 @@ function setupElementInteraction(div, element) {
     // Right-click context menu
     div.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         selectElement(element.id);
         showContextMenu(e.clientX, e.clientY);
     });
@@ -532,7 +543,8 @@ function handleDragMove(e) {
     let newY = state.startTop + dy;
 
     // Snap to grid/guides
-    if (document.getElementById('snapToggle').checked) {
+    const snapToggle = document.getElementById('snapToggle');
+    if (snapToggle && snapToggle.checked) {
         const snapped = snapToGuides(newX, newY, state.draggedElement);
         newX = snapped.x;
         newY = snapped.y;
@@ -686,7 +698,15 @@ function updateSelectedElement() {
     state.selectedElement.styles.fontWeight = document.getElementById('fontWeight').value;
     state.selectedElement.styles.color = document.getElementById('textColor').value;
 
-    renderElement(state.selectedElement);
+    // Force immediate re-render
+    const div = document.querySelector(`[data-element-id="${state.selectedElement.id}"]`);
+    if (div) {
+        const contentDiv = div.querySelector('.element-content');
+        if (contentDiv) {
+            Object.assign(contentDiv.style, state.selectedElement.styles);
+        }
+    }
+    
     addToHistory();
     markAsUnsaved();
 }
@@ -696,12 +716,16 @@ function setupCanvasInteraction() {
     state.canvas.addEventListener('mousedown', (e) => {
         if (e.target === state.canvas) {
             deselectAll();
+            // Close context menu
+            document.getElementById('contextMenu').classList.remove('show');
         }
     });
 
-    // Close context menu on click
-    document.addEventListener('click', () => {
-        document.getElementById('contextMenu').classList.remove('show');
+    // Close context menu on any click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#contextMenu')) {
+            document.getElementById('contextMenu').classList.remove('show');
+        }
     });
 
     // Keyboard shortcuts
@@ -905,7 +929,12 @@ function snapToGuides(x, y, element) {
 
 // Grid toggle
 function toggleGrid() {
-    state.canvas.classList.toggle('grid');
+    const isGridEnabled = document.getElementById('gridToggle').checked;
+    if (isGridEnabled) {
+        state.canvas.classList.add('grid');
+    } else {
+        state.canvas.classList.remove('grid');
+    }
 }
 
 // History (Undo/Redo)
