@@ -84,34 +84,54 @@ function initializeGrapesJS() {
         initialHtml = `<div style="padding: 50px; text-align: center;"><h1>${currentPage.title}</h1><p>Start building!</p></div>`;
     }
     
-    // Initialize GrapesJS
+    // Initialize GrapesJS with all plugins
     editor = grapesjs.init({
         container: '#gjs',
         height: '100%',
         width: '100%',
         storageManager: false,
-        plugins: ['gjs-blocks-basic'],
+        plugins: [
+            'gjs-blocks-basic',
+            'gjs-preset-webpage',
+            'gjs-plugin-forms',
+            'gjs-component-countdown',
+            'gjs-tabs',
+            'gjs-tooltip',
+            'gjs-custom-code',
+            'gjs-touch'
+        ],
+        pluginsOpts: {
+            'gjs-preset-webpage': {
+                modalImportTitle: 'Import Template',
+                modalImportLabel: '<div style="margin-bottom: 10px; font-size: 13px;">Paste here your HTML/CSS and click Import</div>',
+                modalImportContent: function(editor) {
+                    return editor.getHtml() + '<style>' + editor.getCss() + '</style>'
+                },
+            },
+            'gjs-plugin-forms': {},
+            'gjs-blocks-basic': {},
+        },
         canvas: {
             styles: [
-                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css'
+                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+            ],
+            scripts: [
+                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js'
             ]
         },
-        blockManager: {
-            appendTo: '#blocks',
-        },
-        styleManager: {
-            sectors: [{
-                name: 'General',
-                properties: ['display', 'position', 'top', 'right', 'left', 'bottom']
+        deviceManager: {
+            devices: [{
+                name: 'Desktop',
+                width: '',
             }, {
-                name: 'Dimension',
-                properties: ['width', 'height', 'max-width', 'min-height', 'margin', 'padding']
+                name: 'Tablet',
+                width: '768px',
+                widthMedia: '992px',
             }, {
-                name: 'Typography',
-                properties: ['font-family', 'font-size', 'font-weight', 'letter-spacing', 'color', 'line-height', 'text-align']
-            }, {
-                name: 'Decorations',
-                properties: ['background-color', 'border-radius', 'border', 'box-shadow', 'background']
+                name: 'Mobile',
+                width: '320px',
+                widthMedia: '480px',
             }]
         }
     });
