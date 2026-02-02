@@ -2,7 +2,7 @@ const API_BASE = 'https://api.multigrounds.org/api';
 let currentUser = null;
 let currentPage = null;
 let hasUnsavedChanges = false;
-let vvvebInstance = null;
+let grapesInstance = null;
 
 // Get subdomain from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -66,8 +66,8 @@ async function initializeBuilder() {
         
         currentPage = pageData.page;
         
-        // Initialize VvvebJs
-        initializeVvvebJs();
+        // Initialize GrapesJS
+        initializeGrapesJS();
         
         console.log('Builder initialization complete!');
         
@@ -77,7 +77,7 @@ async function initializeBuilder() {
     }
 }
 
-function initializeVvvebJs() {
+function initializeGrapesJS() {
     // Update page info
     document.getElementById('current-subdomain').textContent = currentPage.subdomain;
     
@@ -87,65 +87,73 @@ function initializeVvvebJs() {
     
     // Parse existing page data to get HTML
     let initialHtml = '';
+    let initialCss = '';
+    
     try {
         const parsedData = JSON.parse(currentPage.page_data || '{}');
         
-        // Check if it's VvvebJs HTML or old format
-        if (parsedData.html) {
+        // Check if it's GrapesJS format or old format
+        if (parsedData.html && parsedData.type === 'grapesjs') {
+            initialHtml = parsedData.html;
+            initialCss = parsedData.css || '';
+        } else if (parsedData.html) {
+            // VvvebJs or other HTML format
             initialHtml = parsedData.html;
         } else {
             // Create a default template
             initialHtml = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${currentPage.title}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="container py-5">
-        <h1>${currentPage.title}</h1>
-        <p>Start building your page by dragging elements from the left sidebar.</p>
-    </div>
-</body>
-</html>`;
+<div class="container py-5">
+    <h1>${currentPage.title}</h1>
+    <p>Start building your page by dragging elements from the left sidebar.</p>
+</div>`;
         }
     } catch (e) {
         console.warn('Failed to parse page data, using default template:', e);
         initialHtml = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${currentPage.title}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container py-5">
-        <h1>${currentPage.title}</h1>
-        <p>Start building your page!</p>
-    </div>
-</body>
-</html>`;
+<div class="container py-5">
+    <h1>${currentPage.title}</h1>
+    <p>Start building your page!</p>
+</div>`;
     }
     
-    // Initialize VvvebJs
-    if (typeof Vvveb !== 'undefined') {
-        Vvveb.Builder.init(initialHtml, function() {
-            console.log('VvvebJs initialized successfully');
-            
-            // Mark as changed when user edits
-            Vvveb.Builder.frameBody.on('input', markAsUnsaved);
-            Vvveb.Builder.frameBody.on('change', markAsUnsaved);
+    // Initialize GrapesJS
+    if (typeof grapesjs !== 'undefined') {
+        grapesInstance = grapesjs.init({
+            container: '#vvveb-builder',
+            height: 'calc(100vh - 60px)',
+            width: '100%',
+            storageManager: false,
+            panels: { defaults: [] },
+            blockManager: {
+                appendTo: '#vvveb-builder',
+            },
+            styleManager: {
+                appendTo: '#vvveb-builder',
+            },
+            canvas: {
+                styles: [
+                    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+                    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+                ]
+            },
+            plugins: ['gjs-blocks-basic'],
+            pluginsOpts: {
+                'gjs-blocks-basic': {}
+            }
         });
         
-        vvvebInstance = Vvveb;
+        // Set initial content
+        grapesInstance.setComponents(initialHtml);
+        grapesInstance.setStyle(initialCss);
+        
+        // Mark as changed when user edits
+        grapesInstance.on('change:changesCount', () => {
+            markAsUnsaved();
+        });
+        
+        console.log('GrapesJS initialized successfully');
     } else {
-        showError('VvvebJs failed to load. Please refresh the page.');
+        showError('GrapesJS failed to load. Please refresh the page.');
     }
 }
 
@@ -206,19 +214,23 @@ async function savePage() {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         saveBtn.disabled = true;
         
-        // Get HTML from VvvebJs
+        // Get HTML and CSS from GrapesJS
         let html = '';
-        if (vvvebInstance && Vvveb.Builder.getHtml) {
-            html = Vvveb.Builder.getHtml();
+        let css = '';
+        
+        if (grapesInstance) {
+            html = grapesInstance.getHtml();
+            css = grapesInstance.getCss();
         } else {
-            throw new Error('Unable to get HTML from builder');
+            throw new Error('Unable to get content from builder');
         }
         
         // Save to server
         const saveData = {
             page_data: JSON.stringify({
                 html: html,
-                type: 'vvvebjs'
+                css: css,
+                type: 'grapesjs'
             }),
             title: currentPage.title
         };
