@@ -134,7 +134,44 @@ function initializeGrapesJS() {
                 width: '320px',
                 widthMedia: '480px',
             }]
-        }
+        },
+        styleManager: {
+            sectors: [{
+                name: 'General',
+                properties: ['display', 'position', 'top', 'right', 'left', 'bottom', 'z-index']
+            }, {
+                name: 'Dimension',
+                properties: ['width', 'height', 'max-width', 'min-width', 'max-height', 'min-height', 'margin', 'padding']
+            }, {
+                name: 'Typography',
+                properties: [
+                    'font-family', 
+                    'font-size', 
+                    'font-weight', 
+                    'letter-spacing', 
+                    'color', 
+                    'line-height', 
+                    'text-align',
+                    'text-decoration',
+                    'text-transform',
+                    'text-shadow'
+                ]
+            }, {
+                name: 'Decorations',
+                properties: [
+                    'background-color', 
+                    'background',
+                    'border-radius', 
+                    'border', 
+                    'box-shadow',
+                    'opacity',
+                    'cursor'
+                ]
+            }, {
+                name: 'Extra',
+                properties: ['transition', 'perspective', 'transform']
+            }]
+        },
     });
     
     // Load content
