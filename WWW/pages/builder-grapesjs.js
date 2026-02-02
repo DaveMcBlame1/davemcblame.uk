@@ -84,33 +84,13 @@ function initializeGrapesJS() {
         initialHtml = `<div style="padding: 50px; text-align: center;"><h1>${currentPage.title}</h1><p>Start building!</p></div>`;
     }
     
-    // Initialize GrapesJS with all plugins
+    // Initialize GrapesJS
     editor = grapesjs.init({
         container: '#gjs',
         height: '100%',
         width: '100%',
         storageManager: false,
-        plugins: [
-            'gjs-blocks-basic',
-            'gjs-preset-webpage',
-            'gjs-plugin-forms',
-            'gjs-component-countdown',
-            'gjs-tabs',
-            'gjs-tooltip',
-            'gjs-custom-code',
-            'gjs-touch'
-        ],
-        pluginsOpts: {
-            'gjs-preset-webpage': {
-                modalImportTitle: 'Import Template',
-                modalImportLabel: '<div style="margin-bottom: 10px; font-size: 13px;">Paste here your HTML/CSS and click Import</div>',
-                modalImportContent: function(editor) {
-                    return editor.getHtml() + '<style>' + editor.getCss() + '</style>'
-                },
-            },
-            'gjs-plugin-forms': {},
-            'gjs-blocks-basic': {},
-        },
+        plugins: ['gjs-blocks-basic'],
         canvas: {
             styles: [
                 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
@@ -133,6 +113,66 @@ function initializeGrapesJS() {
                 width: '320px',
                 widthMedia: '480px',
             }]
+        },
+        panels: {
+            defaults: [
+                {
+                    id: 'layers',
+                    el: '.panel__right',
+                    resizable: {
+                        maxDim: 350,
+                        minDim: 200,
+                        tc: 0,
+                        cl: 1,
+                        cr: 0,
+                        bc: 0,
+                    },
+                },
+                {
+                    id: 'panel-switcher',
+                    el: '.panel__switcher',
+                    buttons: [{
+                        id: 'show-layers',
+                        active: true,
+                        label: 'Layers',
+                        command: 'show-layers',
+                        togglable: false,
+                    }, {
+                        id: 'show-style',
+                        active: true,
+                        label: 'Styles',
+                        command: 'show-styles',
+                        togglable: false,
+                    }, {
+                        id: 'show-traits',
+                        active: true,
+                        label: 'Settings',
+                        command: 'show-traits',
+                        togglable: false,
+                    }],
+                },
+                {
+                    id: 'panel-devices',
+                    el: '.panel__devices',
+                    buttons: [{
+                        id: 'device-desktop',
+                        label: '<i class="fa fa-desktop"></i>',
+                        command: 'set-device-desktop',
+                        active: true,
+                        togglable: false,
+                    }, {
+                        id: 'device-tablet',
+                        label: '<i class="fa fa-tablet"></i>',
+                        command: 'set-device-tablet',
+                        togglable: false,
+                    }, {
+                        id: 'device-mobile',
+                        label: '<i class="fa fa-mobile"></i>',
+                        command: 'set-device-mobile',
+                        togglable: false,
+                    }],
+                }
+            ]
         }
     });
     
