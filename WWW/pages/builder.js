@@ -1,4 +1,3 @@
-const API_BASE = 'https://api.multigrounds.org/api';
 let currentUser = null;
 let currentPage = null;
 let hasUnsavedChanges = false;
