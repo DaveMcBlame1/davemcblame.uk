@@ -2,7 +2,7 @@ const API_BASE = 'https://api.multigrounds.org/api';
 let currentUser = null;
 let currentPage = null;
 let hasUnsavedChanges = false;
-let grapesInstance = null;
+let vvvebInstance = null;
 
 // Get subdomain from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Initialize builder
 async function initializeBuilder() {
     console.log('Starting VvvebJs builder initialization...');
+    console.log('Checking for Vvveb library:', typeof Vvveb !== 'undefined');
     
     try {
         // Check if user is logged in
@@ -66,8 +67,8 @@ async function initializeBuilder() {
         
         currentPage = pageData.page;
         
-        // Initialize GrapesJS
-        initializeGrapesJS();
+        // Initialize VvvebJs
+        initializeVvvebJs();
         
         console.log('Builder initialization complete!');
         
@@ -77,34 +78,34 @@ async function initializeBuilder() {
     }
 }
 
-function initializeGrapesJS() {
+function initializeVvvebJs() {
     // Update page info
     document.getElementById('current-subdomain').textContent = currentPage.subdomain;
     
-    // Show builder interface
+    // Show builder interface  
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('builder').style.display = 'block';
+    document.getElementById('custom-topbar').style.display = 'flex';
     
     // Parse existing page data to get HTML
     let initialHtml = '';
-    let initialCss = '';
     
     try {
         const parsedData = JSON.parse(currentPage.page_data || '{}');
         
-        // Check if it's GrapesJS format or old format
-        if (parsedData.html && parsedData.type === 'grapesjs') {
-            initialHtml = parsedData.html;
-            initialCss = parsedData.css || '';
-        } else if (parsedData.html) {
-            // VvvebJs or other HTML format
+        // Check if it's VvvebJs/GrapesJS HTML or old format
+        if (parsedData.html) {
             initialHtml = parsedData.html;
         } else {
-            // Create a default template
+            // Create a default template with Bootstrap
             initialHtml = `
 <div class="container py-5">
-    <h1>${currentPage.title}</h1>
-    <p>Start building your page by dragging elements from the left sidebar.</p>
+    <div class="row">
+        <div class="col-12 text-center">
+            <h1>${currentPage.title}</h1>
+            <p class="lead">Start building your page by dragging components from the left panel.</p>
+            <a href="#" class="btn btn-primary">Get Started</a>
+        </div>
+    </div>
 </div>`;
         }
     } catch (e) {
@@ -116,44 +117,43 @@ function initializeGrapesJS() {
 </div>`;
     }
     
-    // Initialize GrapesJS
-    if (typeof grapesjs !== 'undefined') {
-        grapesInstance = grapesjs.init({
-            container: '#vvveb-builder',
-            height: 'calc(100vh - 60px)',
-            width: '100%',
-            storageManager: false,
-            panels: { defaults: [] },
-            blockManager: {
-                appendTo: '#vvveb-builder',
-            },
-            styleManager: {
-                appendTo: '#vvveb-builder',
-            },
-            canvas: {
-                styles: [
-                    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-                    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
-                ]
-            },
-            plugins: ['gjs-blocks-basic'],
-            pluginsOpts: {
-                'gjs-blocks-basic': {}
-            }
-        });
-        
-        // Set initial content
-        grapesInstance.setComponents(initialHtml);
-        grapesInstance.setStyle(initialCss);
-        
-        // Mark as changed when user edits
-        grapesInstance.on('change:changesCount', () => {
-            markAsUnsaved();
-        });
-        
-        console.log('GrapesJS initialized successfully');
+    // Add timeout detection
+    const loadTimeout = setTimeout(() => {
+        showError('Page builder is taking too long to load. Please refresh the page or contact support.');
+    }, 15000); // 15 seconds timeout
+    
+    // Initialize VvvebJs
+    if (typeof Vvveb !== 'undefined') {
+        try {
+            console.log('Initializing VvvebJs...');
+            
+            // Initialize VvvebJs Builder
+            Vvveb.Builder.init('vvveb-builder', function() {
+                console.log('VvvebJs builder initialized');
+                
+                clearTimeout(loadTimeout);
+                
+                // Load the HTML content
+                Vvveb.Builder.loadHtml(initialHtml);
+                
+                // Set up change detection
+                Vvveb.Builder.frameBody.on('input change', function() {
+                    markAsUnsaved();
+                });
+                
+                console.log('VvvebJs initialized successfully');
+            });
+            
+            vvvebInstance = Vvveb;
+            
+        } catch (error) {
+            clearTimeout(loadTimeout);
+            console.error('VvvebJs initialization error:', error);
+            showError('Failed to initialize page builder: ' + error.message);
+        }
     } else {
-        showError('GrapesJS failed to load. Please refresh the page.');
+        clearTimeout(loadTimeout);
+        showError('VvvebJs failed to load. Please refresh the page.');
     }
 }
 
@@ -214,13 +214,11 @@ async function savePage() {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         saveBtn.disabled = true;
         
-        // Get HTML and CSS from GrapesJS
+        // Get HTML from VvvebJs
         let html = '';
-        let css = '';
         
-        if (grapesInstance) {
-            html = grapesInstance.getHtml();
-            css = grapesInstance.getCss();
+        if (vvvebInstance && typeof Vvveb.Builder.getHtml === 'function') {
+            html = Vvveb.Builder.getHtml();
         } else {
             throw new Error('Unable to get content from builder');
         }
@@ -229,8 +227,7 @@ async function savePage() {
         const saveData = {
             page_data: JSON.stringify({
                 html: html,
-                css: css,
-                type: 'grapesjs'
+                type: 'vvvebjs'
             }),
             title: currentPage.title
         };
