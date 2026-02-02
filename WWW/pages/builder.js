@@ -79,13 +79,37 @@ async function initializeBuilder() {
 }
 
 function initializeVvvebJs() {
+    console.log('initializeVvvebJs called');
+    
+    // Check if elements exist
+    const subdomain = document.getElementById('current-subdomain');
+    const loading = document.getElementById('loading');
+    const topbar = document.getElementById('custom-topbar');
+    const editorContainer = document.getElementById('editor-container');
+    const pageFrame = document.getElementById('page-frame');
+    
+    console.log('Elements found:', {
+        subdomain: !!subdomain,
+        loading: !!loading,
+        topbar: !!topbar,
+        editorContainer: !!editorContainer,
+        pageFrame: !!pageFrame
+    });
+    
+    if (!subdomain || !loading || !topbar || !editorContainer || !pageFrame) {
+        console.error('Missing required elements!');
+        return;
+    }
+    
     // Update page info
-    document.getElementById('current-subdomain').textContent = currentPage.subdomain;
+    subdomain.textContent = currentPage.subdomain;
     
     // Show builder interface  
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('custom-topbar').style.display = 'flex';
-    document.getElementById('editor-container').style.display = 'flex';
+    loading.style.display = 'none';
+    topbar.style.display = 'flex';
+    editorContainer.style.display = 'flex';
+    
+    console.log('UI elements shown');
     
     // Parse existing page data to get HTML
     let initialHtml = '';
@@ -119,7 +143,6 @@ function initializeVvvebJs() {
     }
     
     // Load content into editor
-    const pageFrame = document.getElementById('page-frame');
     pageFrame.innerHTML = initialHtml;
     
     // Set up change detection
