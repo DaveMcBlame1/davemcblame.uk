@@ -79,117 +79,70 @@ async function initializeBuilder() {
 }
 
 function initializeVvvebJs() {
-    console.log('initializeVvvebJs called');
-    
-    // Check if elements exist
-    const subdomain = document.getElementById('current-subdomain');
-    const loading = document.getElementById('loading');
-    const topbar = document.getElementById('custom-topbar');
-    const editorContainer = document.getElementById('editor-container');
-    const pageFrame = document.getElementById('page-frame');
-    
-    console.log('Elements found:', {
-        subdomain: !!subdomain,
-        loading: !!loading,
-        topbar: !!topbar,
-        editorContainer: !!editorContainer,
-        pageFrame: !!pageFrame
-    });
-    
-    if (!subdomain || !loading || !topbar || !editorContainer || !pageFrame) {
-        console.error('Missing required elements!');
-        return;
-    }
+    console.log('Initializing VvvebJs...');
     
     // Update page info
-    subdomain.textContent = currentPage.subdomain;
+    document.getElementById('current-subdomain').textContent = currentPage.subdomain;
     
-    // Show builder interface  
-    loading.style.display = 'none';
-    topbar.style.display = 'flex';
-    editorContainer.style.display = 'flex';
-    
-    console.log('UI elements shown');
-    
-    // Parse existing page data to get HTML
+    // Parse existing page data
     let initialHtml = '';
     
     try {
         const parsedData = JSON.parse(currentPage.page_data || '{}');
         
-        // Check if it's VvvebJs/GrapesJS HTML or old format
         if (parsedData.html) {
             initialHtml = parsedData.html;
         } else {
-            // Create a default template with Bootstrap
+            // Default template
             initialHtml = `
 <div class="container py-5">
     <div class="row">
         <div class="col-12 text-center">
             <h1>${currentPage.title}</h1>
-            <p class="lead">Start building your page by dragging components from the left panel.</p>
+            <p class="lead">Start building your page!</p>
             <a href="#" class="btn btn-primary">Get Started</a>
         </div>
     </div>
 </div>`;
         }
     } catch (e) {
-        console.warn('Failed to parse page data, using default template:', e);
-        initialHtml = `
-<div class="container py-5">
-    <h1>${currentPage.title}</h1>
-    <p>Start building your page!</p>
-</div>`;
+        console.warn('Failed to parse page data:', e);
+        initialHtml = `<div class="container py-5"><h1>${currentPage.title}</h1><p>Start building!</p></div>`;
     }
     
-    // Load content into editor
-    pageFrame.innerHTML = initialHtml;
-    
-    // Set up change detection
-    pageFrame.addEventListener('input', function() {
-        markAsUnsaved();
-    });
-    
-    console.log('Simple editor initialized successfully');
+    // Initialize VvvebJs Builder
+    if (typeof Vvveb !== 'undefined') {
+        try {
+            Vvveb.Builder.init('vvveb-builder', function() {
+                console.log('VvvebJs initialized');
+                
+                // Hide loading, show UI
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('custom-topbar').style.display = 'flex';
+                
+                // Load content
+                Vvveb.Builder.loadHtml(initialHtml);
+                
+                // Setup change detection
+                Vvveb.Builder.frameBody.on('input change', function() {
+                    markAsUnsaved();
+                });
+                
+                console.log('VvvebJs ready!');
+            });
+        } catch (error) {
+            console.error('VvvebJs init error:', error);
+            showError('Failed to initialize builder: ' + error.message);
+        }
+    } else {
+        console.error('VvvebJs not loaded!');
+        showError('VvvebJs library failed to load. Please refresh the page.');
+    }
 }
 
 function insertComponent(type) {
-    const pageFrame = document.getElementById('page-frame');
-    let html = '';
-    
-    switch(type) {
-        case 'heading':
-            html = '<h2>New Heading</h2>';
-            break;
-        case 'paragraph':
-            html = '<p>New paragraph text goes here.</p>';
-            break;
-        case 'button':
-            html = '<a href="#" class="btn btn-primary">Button</a>';
-            break;
-        case 'image':
-            const imageUrl = prompt('Enter image URL:');
-            if (imageUrl) {
-                html = `<img src="${imageUrl}" class="img-fluid" alt="Image">`;
-            }
-            break;
-        case 'container':
-            html = '<div class="container py-4"><div class="row"><div class="col-12">New container content</div></div></div>';
-            break;
-    }
-    
-    if (html) {
-        // Insert at cursor or end
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const fragment = range.createContextualFragment(html);
-            range.insertNode(fragment);
-        } else {
-            pageFrame.innerHTML += html;
-        }
-        markAsUnsaved();
-    }
+    // VvvebJs handles component insertion via its own UI
+    console.log('Component insertion handled by VvvebJs');
 }
 
 function showError(message) {
@@ -245,13 +198,17 @@ async function savePage() {
         console.log('Saving page...', currentPage.subdomain);
         
         const saveBtn = document.getElementById('save-btn');
-        const originalHtml = saveBtn.innerHTML;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         saveBtn.disabled = true;
         
-        // Get HTML from contenteditable frame
-        const pageFrame = document.getElementById('page-frame');
-        const html = pageFrame.innerHTML;
+        // Get HTML from VvvebJs
+        let html = '';
+        
+        if (typeof Vvveb !== 'undefined' && Vvveb.Builder.getHtml) {
+            html = Vvveb.Builder.getHtml();
+        } else {
+            throw new Error('Unable to get content from builder');
+        }
         
         if (!html || html.trim() === '') {
             throw new Error('No content to save');
@@ -280,7 +237,7 @@ async function savePage() {
         
         if (result.success) {
             markAsSaved();
-            showSaveNotification(result.warning ? 'Saved locally' : 'Published!', !!result.warning);
+            alert(result.warning ? 'Saved locally (SFTP sync failed)' : 'Page published successfully!');
         } else {
             console.error('Save failed:', result.message);
             alert('Failed to save: ' + result.message);
