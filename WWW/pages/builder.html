@@ -196,7 +196,7 @@
     <!-- Simple Editor -->
     <div id="editor-container" style="display: none;">
         <div id="editor-sidebar">
-            <h6>Components</h6>
+            <h6 class="mb-3">Components</h6>
             <button class="component-btn" onclick="insertComponent('heading')">
                 <i class="fas fa-heading"></i> Heading
             </button>
@@ -210,8 +210,18 @@
                 <i class="fas fa-image"></i> Image
             </button>
             <button class="component-btn" onclick="insertComponent('container')">
-                <i class="fas fa-square"></i> Container
+                <i class="fas fa-th-large"></i> Container
             </button>
+            
+            <hr class="my-3">
+            
+            <h6 class="mb-2">Bootstrap Classes</h6>
+            <small class="text-muted d-block mb-2">You can use Bootstrap 5 classes directly in your HTML!</small>
+            <div style="font-size: 11px; line-height: 1.4;">
+                <strong>Spacing:</strong> p-3, m-3, py-4, mx-auto<br>
+                <strong>Colors:</strong> text-primary, bg-light<br>
+                <strong>Display:</strong> d-flex, text-center<br>
+            </div>
         </div>
         <div id="editor-canvas">
             <div id="page-frame" contenteditable="true">
